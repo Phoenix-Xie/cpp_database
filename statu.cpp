@@ -1,0 +1,128 @@
+#include "statu.h"
+
+using namespace std;
+
+Statu* Statu::instance = NULL;
+
+Statu::Statu(){
+    read();
+}
+
+Statu* Statu::getInstance(){
+    if(instance == NULL){
+        instance = new Statu();
+    }
+    //printf("instance finnal\n");
+    return instance;
+}
+
+bool Statu::isNameRepeat(string name){
+    for(ll i = 0; i < table_number; i++){
+        if(name == table_name[i])
+            return true;
+    }
+    return false;
+}
+
+int Statu::save(){
+    FILE * fp = fopen(settings::table_settings_name.data(), "w");
+    //printf("save\n");
+    char valid = 'T';
+    fwrite(&valid, sizeof(char), 1, fp);
+    fwrite(&table_number, sizeof(ll), 1, fp);
+    for(ll i = 0; i < table_number; i++){
+        fwrite(table_name[i].data(), sizeof(char), settings::table_name_max_len, fp);
+        fwrite(&table_col_num[i], sizeof(ll), 1, fp);
+        for(ll j = 0; j < table_col_num[i]; j++){
+            fwrite(table_col_name[i][j].data(), sizeof(char), settings::col_name_max_len, fp);
+            string temp = table_col_name[i][j];
+            fwrite(&table_col_size[i][j], sizeof(ll), 1, fp);
+        }
+    }
+    fclose(fp);
+    //printf("save final\n");
+    return 0;
+}
+
+int Statu::read(){
+    
+    FILE * fp = fopen(settings::table_settings_name.data(), "r");
+    //printf("read\n");
+    //文件不存在
+    if(fp == NULL){
+        table_number = 0;
+        table_name.clear();
+        table_col_num.clear();
+        table_col_name.clear();
+        table_col_size.clear();
+        table_col_pre_size.clear();
+        return 0;
+    }
+    //文件存在但无内容
+    char valid;
+    valid = fgetc(fp);
+    if(valid == EOF){
+        table_number = 0;
+        table_name.clear();
+        table_col_num.clear();
+        table_col_name.clear();
+        table_col_size.clear();
+        table_col_pre_size.clear();
+        return 0;
+    }
+
+    fread(&table_number, sizeof(ll), 1, fp);
+
+    vector<char> s(settings::table_name_max_len);
+    vector<char> ss(settings::col_name_max_len);
+    //清空变量
+    table_name.resize(table_number);
+    table_col_num.resize(table_number);
+    table_col_name.resize(table_number);
+    table_col_size.resize(table_number);
+    table_col_pre_size.resize(table_number);
+
+    for(ll i = 0; i < table_number; i++){
+        fread(&s[0], sizeof(char), settings::table_name_max_len, fp);
+        table_name[i] = &s[0];
+        fread(&table_col_num[i], sizeof(ll), 1, fp);
+        table_col_name[i].resize(table_col_num[i]);
+        table_col_size[i].resize(table_col_num[i]);
+        table_col_pre_size[i].resize(table_col_num[i]+1);
+
+        table_col_pre_size[i][0] = 0;
+        for(ll j = 0; j < table_col_num[i]; j++){    
+            fread(&ss[0], sizeof(char), settings::col_name_max_len, fp);
+            
+            table_col_name[i][j] = &ss[0];
+            fread(&table_col_size[i][j], sizeof(ll), 1, fp);
+            //维护前缀和
+            table_col_pre_size[i][j+1] = table_col_pre_size[i][j] + table_col_size[i][j];
+        }
+    }
+    fclose(fp);
+    return 0;
+}
+
+int Statu::createTable(string name, vector<string> col_name, vector<ll> size, vector<char> isHash, vector<char> isUnique){
+    table_number++;
+    this->table_name.push_back(name);
+    this->table_col_name.push_back(col_name);
+    //printf("%s\n", col_name[2].data());
+    ll t = table_col_name.size();
+    //printf("%s\n", table_col_name[0][2].data());
+    this->table_col_size.push_back(size);
+    ll num = col_name.size();
+    this->table_col_num.push_back(num);
+
+    vector<ll> pre_size(size.size()+1);
+    pre_size[0] = 0;
+    ll n = pre_size.size();
+    for(ll i = 1; i < n; i++){
+        pre_size[i] = pre_size[i-1] + size[i-1];
+    }
+    this->table_col_pre_size.push_back(pre_size);
+    this->isHash.push_back(isHash);
+    this->isUnique.push_back(isUnique);
+    save();
+}

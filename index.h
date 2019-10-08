@@ -80,29 +80,6 @@ class Index{
 		int deleteData(const vector< vector<string> > &s, const vector <ll> & addr);
 
 		int query(ll idx, string value, vector<ll> & addr);
-	// 
-	// 
-	// vector< vector< vector<ll> > > pointBucket;
-
-	
-	/*Ыїв§ДњТы*/
-	// void savePointBucket(){
-	// 	FILE * fp = fopen(settings::point_bucket_name.data(), "w");
-		
-	// 	ll n = a.size();
-	// 	fwrite(&n, sizeof(ll), 1, fp);
-	// 	for(ll i = 0; i < n; i++){
-	// 		ll m = a[i].size();
-	// 		fwrite(&m, sizeof(ll), 1, fp);
-	// 		for(ll j = 0; j < m; j++){
-	// 			ll nm = a[i][j].size();
-	// 			fwrite(&nm, sizeof(ll), 1, fp);
-	// 			for(ll k = 0; k < nm; k++){
-					
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 };
 #endif

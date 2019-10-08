@@ -10,9 +10,13 @@
           "-g",
           "-o",
           "database",
-          "menu.cpp",
-          "index.cpp",
-          "database.cpp",
+          // "database.cpp",
+          // //"menu.cpp",
+          // "index.cpp",
+          "statu.cpp",
+          "catch_core.o", //测试模块
+          "test.cpp",
+          // "run_test.cpp",
         ],
         "group": {
           "kind": "build",

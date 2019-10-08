@@ -1,4 +1,6 @@
 #include "database.h"
+#include "statu.h"
+#include <string>
 using namespace std;
 
 //莫名其妙的静态私有变量初始化 

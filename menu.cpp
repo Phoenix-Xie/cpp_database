@@ -1,4 +1,7 @@
 #include "database.h"
+#include <string>
+using namespace std;
+
 int main(){
 	
 	//todo：做一个交互界面? 

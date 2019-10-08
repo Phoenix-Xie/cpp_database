@@ -5,18 +5,80 @@
 #define ll long long
 using namespace std;
 
+//¿ÉÒÔ½«±íµÄÊı¾İÄÚÈİÖ±½Ó´æÔÚÄÚ´æÖ®ÖĞ
+namespace settings{
+	static const string table_settings_name = "table_settings";
+	static const string settings_name = "settings";
+	static const ll table_name_max_len = 100;
+	static const ll col_name_max_len = 100;
+}
+
 class Statu{
+private:
+	
+	static Statu * instance;
+	Statu();
+
+	/*************************************************
+	Function: save
+	Description: ±£´æµ±Ç°ËùÓĞ±íµÄ»ù±¾Êı¾İ
+	Calls: // ±»±¾º¯Êıµ÷ÓÃµÄº¯ÊıÇåµ¥
+	Input: 
+	Output: ÎŞ
+	Return: int ×´Ì¬Âë
+	Other: ÎŞ
+	*************************************************/  
+	int save();
+	/*************************************************
+	Function: read
+	Description: ¶ÁÈ¡µ±Ç°±íÖĞËùÓĞ»ù±¾Êı¾İ
+	Calls:
+	Input: 
+	Output: ÎŞ
+	Return: int ×´Ì¬Âë
+	Other: ÎŞ
+	*************************************************/  
+	int read();
+
+	/*************************************************
+	Function: isNameRepeat
+	Description: ÅĞ¶Ï±íÃûÊÇ·ñÖØ¸´
+	Calls: // ±»±¾º¯Êıµ÷ÓÃµÄº¯ÊıÇåµ¥
+	Input: 
+		name£º string ÅĞ¶ÏÓÃµÄ±íÃû
+	Output: ÎŞ
+	Return: bool ÊÇ·ñÓĞÖØ¸´£¬ÓĞÖØ¸´Îªtrue ·ñÔòÎªfalse
+	Other: ÎŞ
+	*************************************************/  
+	bool isNameRepeat(string name);
 public:
-    ll table_name_max_len;
-	ll col_name_max_len;
-	ll table_number; //å½“å‰è¡¨é…ç½®
-	string table_name; //è¡¨å 
-	ll table_col_num; //åˆ—æ•°é‡  
-	vector<string> table_col_name; //åˆ—å
-	vector<ll> table_col_size; // å½“å‰è¡¨æ¯åˆ—é•¿åº¦
-	vector<ll> table_col_pre_size; //æ¯åˆ—è¡¨é•¿å‰ç¼€å’Œ 
-	ll table_id;
-    
+	ll table_number; //µ±Ç°±íÅäÖÃ
+	
+	vector<string> table_name;
+	vector<ll> table_col_num; 
+	vector< vector<string> > table_col_name; //ÁĞÃû
+	vector< vector<ll> > table_col_size; // Ã¿¸ö±íÃ¿ÁĞ³¤¶È
+	vector< vector<ll> > table_col_pre_size; //Ã¿¸ö±íÃ¿ÁĞ±í³¤Ç°×ººÍ
+	vector< vector<char> > isHash;
+	vector< vector<char> > isUnique;
+
+	static Statu * getInstance();
+	
+
+	/*************************************************
+	Function: createTable
+	Description: ´´½¨±í
+	Calls:
+	Input: 
+	Output: ÎŞ
+	Return: int ×´Ì¬Âë 0³É¹¦ -1±íÒÑ´æÔÚ
+	Other: ÎŞ
+	*************************************************/
+	int createTable(string name, vector<string> col_name, vector<ll> size, vector<char> isHash, vector<char> isUnique);
+
+	int getIdx(string name);
+
+	int clearTables();
 };
 
 
