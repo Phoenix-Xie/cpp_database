@@ -1,5 +1,8 @@
 #include "index.h"
 #include <cstdio>
+#include <list>
+
+using namespace std;
 
 ll Index::hash(string value, ll mod){
     ll len = value.length();
@@ -10,130 +13,120 @@ ll Index::hash(string value, ll mod){
     return ans;
 } 
 
-Index::Index(){
-    isChoose = false;
-    isHash.clear();
+Index::Index(ll id){
+    sta = Statu::getInstance();
     bucket.clear();
-    nowName = "";
+    sidx = id;
 }
 
-int Index::read(string name, ll cnum){
-    name += "_hash";
-    isHash.resize(cnum);
-    FILE * fp = fopen("name", "r");
+int Index::read(){
+    string name =  sta->table_name[sidx] + "_hash";
+    FILE * fp = fopen(name.data(), "r");
     rewind(fp);
-    for(ll i = 0; i < cnum; i++){
-        fread(&isHash[i], sizeof(char), 1, fp);
+
+    ll cnum = sta->table_col_num[sidx];
+    ll n, t;
+    bucket.resize(cnum);
+    for(ll field = 0; field < cnum; field++){
+        if(sta->isHash[sidx][field] == 'T'){
+            bucket[field].resize(HASHMOD);
+            for(ll i = 0; i < HASHMOD; i++){
+                fread(&n, sizeof(ll), 1, fp);
+                bucket[field][i].clear();
+                for(ll j = 0; j < n; j++){
+                    fread(&t, sizeof(ll), 1, fp);
+                    bucket[field][i].push_front(t);
+                }
+            }
+        }else{ //¸Ã×Ö¶Î²»½øÐÐhash
+            bucket[field].resize(0);
+            bucket[field].clear();
+        }
     }
+    fclose(fp);
+    return 0;
+}
+
+int Index::save(){
+    string name =  sta->table_name[sidx] + "_hash";
+    FILE * fp = fopen(name.data(), "w");
+    rewind(fp);
+
+    ll cnum = sta->table_col_num[sidx];
+    ll n;
+    for(ll field = 0; field < cnum; field++){
+        if(sta->isHash[sidx][field] == 'T'){
+            for(ll i = 0; i < HASHMOD; i++){
+                //µ±Ç°Í°ÖÐÖ¸ÕëÊýÁ¿
+                n = bucket[field][i].size();
+                fwrite(&n, sizeof(ll), 1, fp);
+                //Ð´ÈëÁ´±íÖÐÃ¿Ò»Ïî
+                list<ll>::iterator itr = bucket[field][i].begin();
+                while(itr != bucket[field][i].end()){
+                    fwrite(&(*itr), sizeof(ll), 1, fp);
+                }
+            }
+        }
+    }
+    fclose(fp);
+    return 0;
+}
+
+int Index::create(){
+    ll cnum = sta->table_col_num[sidx];
     ll n;
     bucket.resize(cnum);
     for(ll field = 0; field < cnum; field++){
-        //è‹¥è¯¥å­—æ®µæœ‰å»ºç«‹ç´¢å¼•åˆ™è¯»å–
-        if(isHash[field] == 'T'){
+        if(sta->isHash[sidx][field] == 'T'){
             bucket[field].resize(HASHMOD);
             for(ll i = 0; i < HASHMOD; i++){
-
-                fread(&n, sizeof(ll), 1, fp);
-                for(ll j = 0; j < n; j++){
-                    fread(&bucket[field][i][j], sizeof(ll), 1, fp);
-                }
+                bucket[field][i].clear();
             }
+        }else{ //¸Ã×Ö¶Î²»½øÐÐhash
+            bucket[field].clear();
         }
-    }
-    fclose(fp);
+    } 
+    return 0;
 }
 
-int Index::save(string name){
-    name += "_hash";
-    ll cnum = isHash.size();
-    FILE * fp = fopen("name", "w");
-    rewind(fp);
-    for(ll i = 0; i < cnum; i++){
-        fwrite(&isHash[i], sizeof(char), 1, fp);
-    }
-    ll n;
-    for(ll field = 0; field < cnum; field++){
-        if(isHash[field] == 'T'){
-            for(ll i = 0; i < HASHMOD; i++){
-                n = bucket[field][i].size();
-
-                fwrite(&n, sizeof(ll), 1, fp);
-                for(ll j = 0; j < n; j++){
-                    fwrite(&bucket[field][i][j], sizeof(ll), 1, fp);
-                }
-            }
-        }
-    }
-    fclose(fp);
-}
-
-int Index::create(string name, const vector<char> & isHash){
-    ll n = isHash.size();
-    //å†™å…¥è¯¥è¡¨hashè®¾ç½®
-    bucket.resize(n);
-    this->isHash = isHash;
-    for(ll i = 0; i < n; i++){
-        if(isHash[i] == 'T'){
-            bucket[i].resize(HASHMOD);
-            for(ll j = 0; j < HASHMOD; j++){
-                bucket[i][j].resize(0);
-            }
-        }
-    }
-    save(name);
-    isChoose = true;
-    nowName = name;
-}
-
-int Index::choose(string name, ll cnum){
-    if(isChoose){
-        save(nowName);
-    }
-    read(name, cnum);
-    isChoose = true;
-    nowName = name;
-}
 
 int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
     ll n = s.size();
-    //æ— è¾“å…¥æ•°æ®
+    //Êý¾ÝÎª¿Õ
     if(n == 0) return 0;
 
-    ll m = s.size();
+    ll cnum = sta->table_col_num[sidx];
     ll hashCode;
     for(ll i = 0; i < n; i++){
-        for(ll j = 0; j < m; j++){
-            if(isHash[j] == 'T'){
+        for(ll j = 0; j < cnum; j++){
+            if(sta->isHash[sidx][j] == 'T'){
                 hashCode = hash(s[i][j]);
-                bucket[j][hashCode].push_back(addr[i]);
+                bucket[j][hashCode].push_front(addr[i]);
             }
         }
     }
+    return 0;
 }
 
 int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & addr){
     ll n = s.size();
     if(n == 0) return 0;
-    ll m = s[0].size();
+    ll cnum = sta->table_col_num[sidx];
     ll hashCode, t, k;
+
     for(ll i = 0; i < n; i++){
-        for(ll j = 0; j < m; j++){
-            if(isHash[j] == 'T'){
+        for(ll j = 0; j < cnum; j++){
+            if(sta->isHash[sidx][j] == 'T'){
                 hashCode = hash(s[i][j]);
-                t = bucket[j][hashCode].size();
-                for(k = 0; k < t; k++){
-                    if(bucket[j][hashCode][k] == addr[i]){
-                        break;
-                    }
-                }
-                vector<ll>::iterator itr = bucket[j][hashCode].begin();
-                bucket[j][hashCode].erase(itr+k);
+                //´Ë´¦Ä¬ÈÏÃ¿¸öÓÐÐ§µØÖ·Î¨Ò»
+                bucket[i][j].remove(addr[i]);
             }
         }
     }
+    return 0;
 }
 
-int Index::query(ll idx, string value, vector<ll> & addr){
+int Index::query(ll idx, string value, list<ll> & addr){
     ll hashCode = hash(value);
     addr = bucket[idx][hashCode];
 }

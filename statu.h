@@ -71,14 +71,38 @@ public:
 	Calls:
 	Input: 
 	Output: 无
-	Return: int 状态码 0成功 -1表已存在
+	Return: int 状态码 0成功
+		-1 表已存在
+		-200:
+		 	-201: size大小不正确
+			-202: isHash大小不正确
+			-203: isUnique大小不正确
 	Other: 无
 	*************************************************/
 	int createTable(string name, vector<string> col_name, vector<ll> size, vector<char> isHash, vector<char> isUnique);
 
+	/*************************************************
+	Function: getIdx
+	Description: 获得表所在位置
+	Calls:
+	Input: 
+	Output: 无
+	Return: int 表所在位置，若为
+		-1 则表不存在
+	Other: 无
+	*************************************************/
 	int getIdx(string name);
 
-	int clearTables();
+	/*************************************************
+	Function: clear
+	Description: 清空所有数据
+	Calls:
+	Input: 
+	Output: 无
+	Return: 状态码
+	Other: 无
+	*************************************************/
+	int clear();
 };
 
 

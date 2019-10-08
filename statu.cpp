@@ -105,14 +105,31 @@ int Statu::read(){
 }
 
 int Statu::createTable(string name, vector<string> col_name, vector<ll> size, vector<char> isHash, vector<char> isUnique){
+
+    //若名字重复
+    if(isNameRepeat(name)){
+        return -1;
+    }
+    ll num = col_name.size();
+
+    if(num != size.size()){
+        return -201;
+    }
+    if(num != isHash.size()){
+        return -202;
+    }
+    if(num != isUnique.size()){
+        return -203;
+    }
+    //新增一张表设置
+    
     table_number++;
     this->table_name.push_back(name);
     this->table_col_name.push_back(col_name);
     //printf("%s\n", col_name[2].data());
-    ll t = table_col_name.size();
     //printf("%s\n", table_col_name[0][2].data());
     this->table_col_size.push_back(size);
-    ll num = col_name.size();
+    
     this->table_col_num.push_back(num);
 
     vector<ll> pre_size(size.size()+1);
@@ -125,4 +142,25 @@ int Statu::createTable(string name, vector<string> col_name, vector<ll> size, ve
     this->isHash.push_back(isHash);
     this->isUnique.push_back(isUnique);
     save();
+    return 0;
+}
+
+int Statu::getIdx(string name){
+    for(ll i = 0; i < table_number; i++){
+        if(name == table_name[i]){
+            return i;
+        }
+    }
+    return -1;
+}
+
+int Statu::clear(){
+    table_number = 0;
+    table_name.clear();
+    table_col_num.clear();
+    table_col_name.clear();
+    table_col_size.clear();
+    table_col_pre_size.clear();
+    FILE * fp = fopen(settings::table_settings_name.data(), "w");
+    fclose(fp);
 }

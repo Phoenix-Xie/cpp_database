@@ -3,22 +3,22 @@
 #define ll long long
 #include <vector>
 #include <string>
+#include <list>
+#include "statu.h"
 using namespace std;
 
+//单表index
 class Index{
     private:
        //指针哈希木桶
 	   //第一维：每个字段 第二维：每个桶 第三维：每个值
 	   //hash映射存距离文件开头真实地址
-	   vector< vector< vector<ll> > > bucket;
+	   vector< vector< list<ll> > > bucket;
 
 		static const ll HASHMOD = 1000;
-	   	//是否开启hash，标志位
-		vector<char> isHash;
-		//是否已选中
-		bool isChoose;
-		//当前选中表名
-		string nowName;
+	   	
+		Statu * sta;
+		ll sidx;
 
 		/*************************************************
 		Function: hash
@@ -34,21 +34,21 @@ class Index{
 		*************************************************/ 
 		ll hash(string value, ll mod = Index::HASHMOD);
 
-		int read(string name, ll cnum);
-
-		int save(string name);
+		
 
     public:
+		
 		/*************************************************
 		Function: Index
 		Description: 构造函数
 		Calls: // 被本函数调用的函数清单
 		Input: 
+			id: 创建索引的表
 		Output: 无
 		Return: 一个index实例
-		Other: 无
+		Other: 此处未进行id对应表是否存在的判断，应注意
 		*************************************************/ 
-        Index();
+        Index(ll id);
 
 		/*************************************************
 		Function: create
@@ -61,8 +61,11 @@ class Index{
 		Return: int 状态码
 		Other: 进行该操作后会清空该表中现存所有数据索引,并且直接选中当前创建的表数据索引
 		*************************************************/ 
-        int create(string name, const vector<char> & isHash);
+        int create();
 
+		int read();
+
+		int save();
 		/*************************************************
 		Function: choose
 		Description: 选取一个表的hash数据
@@ -77,9 +80,31 @@ class Index{
 
 		int insert(const vector< vector<string> > & s, const vector <ll> & addr);
 
+		/*************************************************
+		Function: delete
+		Description: 删除二维数据表中对应的数据地址
+		Calls: // 被本函数调用的函数清单
+		Input: 
+			name: string 选取的表的名称
+		Output: 无
+		Return: int 状态码
+		Other: 默认每个有效地址唯一
+		*************************************************/
 		int deleteData(const vector< vector<string> > &s, const vector <ll> & addr);
 
-		int query(ll idx, string value, vector<ll> & addr);
+		/*************************************************
+		Function: delete
+		Description: 指定字段的指定值可能存储位置的地址的链表桶
+		Calls: // 被本函数调用的函数清单
+		Input: 
+			idx: ll 字段位置
+			value: string 值
+			addr: ll 地址链表
+		Output: 无
+		Return: int 状态码
+		Other: 
+		*************************************************/
+		int query(ll idx, string value, list<ll> & addr);
 
 };
 #endif

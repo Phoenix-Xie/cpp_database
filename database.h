@@ -10,72 +10,77 @@
 #define ll long long
 
 using namespace std;
-class DataBase{
-/*
-ï¿½ï¿½Ð´ï¿½æ·¶ï¿½ï¿½
-1. ï¿½Îºï¿½sizeï¿½ï¿½ï¿½ï¿½ Ö¸ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½Ù¸ï¿½charï¿½ï¿½ sizec ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¸ï¿½ size* sizeof(char) 
-2. ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿? 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½
-3. ï¿½ÐºÅ´ï¿½1ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
-
-//ï¿½ï¿½ï¿½ï¿½ï¿½ëº¬ï¿½å£º
-0.ï¿½É¹ï¿½
--1. Î´Öªï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
--2. Î´Ñ¡ï¿½ï¿½ï¿?
--3. Î´ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½
-*/ 
-	
+class DataBase{	
 private:
-	ll table_name_max_len;
-	ll col_name_max_len;
-	ll table_number;
-	static DataBase * DBinstance;
-
-	//ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	string table_name; //ï¿½ï¿½ï¿½ï¿½ 
-	ll table_col_num; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½  
-	vector<string> table_col_name; //ï¿½ï¿½ï¿½ï¿½
-	vector<ll> table_col_size; // ï¿½ï¿½Ç°ï¿½ï¿½Ã¿ï¿½Ð³ï¿½ï¿½ï¿½
-	vector<ll> table_col_pre_size; //Ã¿ï¿½Ð±ï¿½ï¿½ï¿½Ç°×ºï¿½ï¿½ 
+	//µ±Ç°±íid
 	ll table_id;
-	
-	//È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	Statu * statu;
+	/*************************************************
+	Function: DataBase
+	Calls: Statu::getInstance;
+	Description: ¹¹Ôìº¯Êý
+	*************************************************/ 
 	DataBase();
 public:
-	/*ï¿½ï¿½ï¿½Ý¿â±¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
-
 	/*************************************************
 	Function: get
-	Description: Ñ¡È¡Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½hashï¿½ï¿½ï¿½ï¿½
-	Calls: // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÃµÄºï¿½ï¿½ï¿½ï¿½åµ¥
+	Description: 
+	Calls: 
 	Input: 
-		name: string Ñ¡È¡ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	Output: ï¿½ï¿½
-	Return: int ×´Ì¬ï¿½ï¿½
-	Other: ï¿½ï¿½
-	*************************************************/  
-	static DataBase * getInstance();
+	Output: 
+	Return: 
+	Other: 
+	*************************************************/ 
 	
-	void closeDataBase();
-	
-	/*ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/ 
-	//todoï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ 
-    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Â?
-	void createTable(string name, vector<string> col_name, vector<ll> col_size, vector<char> isHash);
+	/*************************************************
+	Function: createTable
+	Description: ´´½¨Ò»ÕÅ±í£¬²¢½¨Á¢¸Ã±íµÄÊý¾ÝÄÚÈÝ
+	Calls: 
+	Input: 
+	Output: 
+	Return: int ×´Ì¬Âë 
+	0 ´´½¨³É¹¦
+	-1
+	-1 ±íÒÑ´æÔÚ
+		-200:
+		 	-201: size´óÐ¡²»ÕýÈ·
+			-202: isHash´óÐ¡²»ÕýÈ·
+			-203: isUnique´óÐ¡²»ÕýÈ·
+		-300
+			-301£ºÊý¾ÝÎÄ¼þ´ò¿ªÊ§°Ü
+	Other: 
+	*************************************************/
+	int createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique);
 	
 	void showTables();
-	
-	int deleteTable(string name);
 
-	//ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ý¿âµ±Ç°ï¿½ï¿½ï¿½ï¿½Ï¢
+	/*************************************************
+	Function: getTableName
+	Description: »ñÈ¡±íÃû
+	Calls: 
+	Input: 
+	Output: 
+	Return: string ÈôÎ´Ñ¡ÖÐ±íÎª ""
+	Other: 
+	*************************************************/
 	string getTableName();
 
     ll getColNum();
 	
 	vector<string> getColName();
 
-	/*ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿? -- ï¿½ï¿½ï¿½ï¿½*/
-    //Ñ¡ï¿½ï¿½ï¿? 
-	string chooseTable(string name);
+	/*************************************************
+	Function: chooseTable
+	Description: Ñ¡Ôñ±í
+	Calls: 
+	Input: 
+	Output: 
+	Return: int ×´Ì¬Âë 
+	0 Ñ¡ÖÐ
+	-1 ±í²»´æÔÚ
+	Other: 
+	*************************************************/
+	int chooseTable(string name);
 
     //ï¿½ï¿½
 	int insert(const vector< vector<string> > & s, vector<ll> & id, string name = "");

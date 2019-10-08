@@ -3,81 +3,32 @@
 #include <string>
 using namespace std;
 
-//莫名其妙的静态私有变量初始化 
-DataBase * DataBase::DBinstance = NULL;
-
 DataBase::DataBase(){
-	//全局设置 
-	this->table_name_max_len = 50;
-	this->col_name_max_len = 50;
-	this->table_number = 0; 
-	FILE * fp = fopen(settings::settings_name.data(), "r");
-	//读取已有表数 
-	if(fread(&this->table_number, sizeof(ll), 1, fp) == 0){
-		this->table_number = 0;
-	}
-	//设置表名长度
-	//设置 
-	fclose(fp);
-	//表设置 
-	fp = fopen(settings::table_settings_name.data(), "a");
-	fclose(fp);
+	statu = Statu::getInstance();
+	table_id = -1;
 }
 
-DataBase * DataBase::getInstance(){
-	if(DBinstance == NULL){
-		DBinstance = new DataBase(); 
-	}
-	return DBinstance;
-}
-
-void DataBase::closeDataBase(){
-	FILE * fp = fopen("settings", "w");
-	fwrite(&this->table_number, sizeof(ll), 1, fp);
-	fclose(fp);
-}
-
-void DataBase::createTable(string name, vector<string> col_name, vector<ll> col_size, vector <char> isHash){
+int DataBase::createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique){
 	
-	//打开配置文件 
-	vector<char> s ;
-	FILE * fp = fopen(settings::table_settings_name.data(), "rb+");
-	fseek(fp, 0, SEEK_END);
-	char valid = 'T';
-	//写入有效标志位
-	// printf("%d\n", fwrite(&valid, sizeof(char), 1, fp)); 
-	// fwrite(&valid, sizeof(char), 1, fp); 
-	fwrite(&valid, sizeof(char), 1, fp); 
-	//写入文件名 
-	fwrite(name.data(), sizeof(char), this->table_name_max_len, fp);
-	//写入列数 
-	ll len = col_size.size();
-	fwrite(&len, sizeof(ll), 1, fp);
-	//写入每一列名字 
-	for(ll i = 0; i < len; i++){
-		fwrite(col_name[i].data(), sizeof(char), this->col_name_max_len, fp);
-	}
-
-	//写入每一列长度 
-	
-	for(ll i = 0; i < len; i++){
-		fwrite(&col_size[i], sizeof(ll), 1, fp);
-	}
-	fclose(fp);
-
-
-
-	//创建该数据库文件
-	fp = fopen(name.data(), "w");
-	
-	rewind(fp);
-	//写入表头
-	ll nextLocation = -1;
-	fwrite(&nextLocation, sizeof(ll), 1, fp);
-	fclose(fp); 
-	this->table_number++;
+	ll code = statu->createTable(name, col_name, col_size, isHash, isUnique);
+	if(code == 0){
+		//创建该数据库文件
+		FILE * fp = fopen(name.data(), "w");
+		//数据文件创建失败
+		if(fp == NULL) 
+			return -301;
+		rewind(fp);
+		//写入表头
+		ll nextLocation = -1;
+		fwrite(&nextLocation, sizeof(ll), 1, fp);
+		fclose(fp);
+	}else{
+		return code;
+	}	 
 }
 
+//暂时停止该功能
+/*
 void DataBase::showTables(){
 	printf("show\n");
 	FILE * fp = fopen(settings::table_settings_name.data(), "rb+");
@@ -111,136 +62,36 @@ void DataBase::showTables(){
 	
 	fclose(fp);
 }
-
-int DataBase::deleteTable(string name){
-	FILE * fp = fopen(settings::settings_name.data(), "rb+");
-	fseek(fp, 0, SEEK_SET);
-	char valid; 
-	vector <char> s(this->table_name_max_len);
-	ll num; 
-	while((valid = fgetc(fp)) != EOF){
-		printf("tell:%d\n", ftell(fp));
-		if(valid == 'T'){
-			
-			fread(&s[0], sizeof(char), this->table_name_max_len, fp);
-			string ss(&s[0]);
-			printf("检测到 %s\n", &s[0]);
-			if(ss == name){
-				printf("进入删除\n"); 
-				valid = 'F';
-				fseek(fp, -((this->table_name_max_len+1) * sizeof(char)), SEEK_CUR);
-				fwrite(&valid, sizeof(char), 1, fp);
-				break;
-			}
-			fread(&num, sizeof(ll), 1, fp);
-			fseek(fp, num * (this->col_name_max_len) * sizeof(char), SEEK_CUR);
-			fseek(fp, num * sizeof(ll), SEEK_CUR);
-		}
-		else{
-			fseek(fp, this->table_name_max_len * sizeof(char), SEEK_CUR);
-			fread(&num, sizeof(ll), 1, fp);
-			fseek(fp, num * (this->col_name_max_len) * sizeof(char), SEEK_CUR);
-			fseek(fp, num * sizeof(ll), SEEK_CUR);
-		}
-	}
-	//fflush(fp);
-	fclose(fp);
-}
+*/
 
 string DataBase::getTableName(){
-	return this->table_name;
+	if(table_id == -1)
+		return "";
+	return statu->table_name[table_id];
 }
 
 ll DataBase::getColNum(){
-	return this->table_col_num;
+	if(table_id == -1) return 0;
+	return statu->table_col_num[table_id];
 }
 
 vector<string> DataBase::getColName(){
-	return this->table_col_name;
+	if(table_id == -1) return vector<string>(0);
+	return statu->table_col_name[table_id];
 }
 
-string DataBase::chooseTable(string name){
-	bool getFlag = false; //是否读取到标志 
-	FILE * fp = fopen(settings::table_settings_name.data(), "rb");
-	fseek(fp, 0, SEEK_SET);
-	//获取全局变量
-	ll clen = this->col_name_max_len;
-	//设定临时变量 
-	char valid; 
-	vector <char> s(this->table_name_max_len);
-	ll num; 
-	ll lineNum = 0; //当前表所在行号
-	while((valid = fgetc(fp)) != EOF){
-		// printf("choose:%d\n", ftell(fp));
-		//无论有效都应该计算行号
-		lineNum++;
-		// 判断该行是否有效 
-		if(valid == 'T'){
-			fread(&s[0], sizeof(char), this->table_name_max_len,fp);
-			string ss(&s[0]);
-			//判断是否是相同名字 
-			if(ss == name){
-				printf("找到相关数据表\n");
-				this->table_id = lineNum;
-				this->table_name = name;
-				//读取列数 
-				fread(&num, sizeof(ll), 1, fp);
-				this->table_col_num = num; 
-				//设置引用
-				vector<string> & cname = this->table_col_name;
-				vector<ll> & csize = this->table_col_size;
-				vector<ll> & csizep = this->table_col_pre_size;
-				//临时变量
-				vector<char> temp_c(clen); 
-				//初始化向量 
-				cname.resize(this->table_col_num);
-				csize.resize(this->table_col_num);
-				csizep.resize(this->table_col_num+1); 
-				//读取每一列名字 
-				for(ll i = 0; i < num; i++){
-					fread(&temp_c[0], sizeof(char), clen, fp);
-					cname[i] = &temp_c[0];
-				}
-				//读取每一列的宽度 
-				csizep[0] = 0;
-				for(ll i = 0; i < num; i++){
-					fread(&csize[i], sizeof(ll), 1, fp);
-					//printf("csize:%d\n", csize[i]);
-					csizep[i+1] = csizep[i] + csize[i];
-				}
-				getFlag = true; 
-				break; 
-			}
-			//不同名字情况，跳过 
-			else{
-				ll num;
-				fread(&num, sizeof(ll), 1, fp);
-				//跳过所有列名 和 列长度 
-				fseek(fp, num * sizeof(char) * clen, SEEK_CUR);
-				fseek(fp, num * sizeof(ll), SEEK_CUR);
-			} 
-		}
-		else{
-			ll num;
-			fseek(fp, sizeof(char) * this->table_name_max_len, SEEK_CUR);
-			fread(&num, sizeof(ll), 1, fp);
-			fseek(fp, num * sizeof(char) * clen, SEEK_CUR);
-			fseek(fp, num * sizeof(ll), SEEK_CUR);
-		} 
-		//todo：该行无效情况未处理
-		//todo：未找到情况未处理 
-	}
-	fclose(fp); 
-	if(getFlag){
-		printf("%s", this->table_name.data());
-		return name;
-	}
-	else{
-		return "未进入";
+int DataBase::chooseTable(string name){
+	ll code = statu->getIdx(name);
+	if(code != -1){
+		table_id = code;
+		return 0;
+	}else{
+		return code;
 	}
 }
 
 int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string name){
+	
 	//判断是否选表
 	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
 		return -2;
