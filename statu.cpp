@@ -155,12 +155,15 @@ int Statu::getIdx(string name){
 }
 
 int Statu::clear(){
+    //由于为状态类，因此应注意此处应该将所有自身变量清空
     table_number = 0;
     table_name.clear();
     table_col_num.clear();
     table_col_name.clear();
     table_col_size.clear();
     table_col_pre_size.clear();
+    isHash.clear();
+    isUnique.clear();
     FILE * fp = fopen(settings::table_settings_name.data(), "w");
     fclose(fp);
 }

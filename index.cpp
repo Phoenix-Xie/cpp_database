@@ -13,13 +13,21 @@ ll Index::hash(string value, ll mod){
     return ans;
 } 
 
+int Index::check(){
+    if(!isReadOrCreate)
+        return -1;
+    return 0;
+}
+
 Index::Index(ll id){
     sta = Statu::getInstance();
     bucket.clear();
     sidx = id;
+    isReadOrCreate = false;
 }
 
 int Index::read(){
+    isReadOrCreate = true;
     string name =  sta->table_name[sidx] + "_hash";
     FILE * fp = fopen(name.data(), "r");
     rewind(fp);
@@ -48,6 +56,9 @@ int Index::read(){
 }
 
 int Index::save(){
+    ll checkCode = check();
+    if(checkCode != 0)
+        return checkCode;
     string name =  sta->table_name[sidx] + "_hash";
     FILE * fp = fopen(name.data(), "w");
     rewind(fp);
@@ -63,7 +74,9 @@ int Index::save(){
                 //写入链表中每一项
                 list<ll>::iterator itr = bucket[field][i].begin();
                 while(itr != bucket[field][i].end()){
+                    ll t = bucket[field][i].size();
                     fwrite(&(*itr), sizeof(ll), 1, fp);
+                    itr++;
                 }
             }
         }
@@ -73,6 +86,7 @@ int Index::save(){
 }
 
 int Index::create(){
+    isReadOrCreate = true;
     ll cnum = sta->table_col_num[sidx];
     ll n;
     bucket.resize(cnum);
@@ -91,11 +105,15 @@ int Index::create(){
 
 
 int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
+    ll checkCode = check();
+    if(checkCode != 0)
+        return checkCode;
     ll n = s.size();
     //数据为空
     if(n == 0) return 0;
-
+    
     ll cnum = sta->table_col_num[sidx];
+    if(s[0].size() != cnum) return -1;
     ll hashCode;
     for(ll i = 0; i < n; i++){
         for(ll j = 0; j < cnum; j++){
@@ -109,17 +127,20 @@ int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
 }
 
 int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & addr){
+    ll checkCode = check();
+    if(checkCode != 0)
+        return checkCode;
     ll n = s.size();
     if(n == 0) return 0;
     ll cnum = sta->table_col_num[sidx];
     ll hashCode, t, k;
 
     for(ll i = 0; i < n; i++){
-        for(ll j = 0; j < cnum; j++){
-            if(sta->isHash[sidx][j] == 'T'){
-                hashCode = hash(s[i][j]);
+        for(ll field = 0; field < cnum; field++){
+            if(sta->isHash[sidx][field] == 'T'){
+                hashCode = hash(s[i][field]);
                 //此处默认每个有效地址唯一
-                bucket[i][j].remove(addr[i]);
+                bucket[field][hashCode].remove(addr[i]);
             }
         }
     }
@@ -127,6 +148,10 @@ int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & add
 }
 
 int Index::query(ll idx, string value, list<ll> & addr){
+    ll checkCode = check();
+    if(checkCode != 0)
+        return checkCode;
     ll hashCode = hash(value);
     addr = bucket[idx][hashCode];
+    return 0;
 }

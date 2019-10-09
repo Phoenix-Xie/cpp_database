@@ -20,6 +20,9 @@ class Index{
 		Statu * sta;
 		ll sidx;
 
+		bool isReadOrCreate;
+		//todo: 设置一个 isread位置保证该index是否read或者create过
+
 		/*************************************************
 		Function: hash
 		Description: hash映射函数
@@ -34,7 +37,14 @@ class Index{
 		*************************************************/ 
 		ll hash(string value, ll mod = Index::HASHMOD);
 
-		
+		/*************************************************
+		Function: check
+		Description: 公用条件检测函数
+		Calls: // 被本函数调用的函数清单
+		Return: int 状态码
+		-1 该对象还未read或create 处于空状态
+		*************************************************/ 
+		int check();
 
     public:
 		
