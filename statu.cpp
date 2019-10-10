@@ -37,6 +37,8 @@ int Statu::save(){
             fwrite(table_col_name[i][j].data(), sizeof(char), settings::col_name_max_len, fp);
             string temp = table_col_name[i][j];
             fwrite(&table_col_size[i][j], sizeof(ll), 1, fp);
+            fwrite(&isHash[i][j], sizeof(char), 1, fp);
+            fwrite(&isUnique[i][j], sizeof(char), 1, fp);
         }
     }
     fclose(fp);
@@ -81,6 +83,8 @@ int Statu::read(){
     table_col_name.resize(table_number);
     table_col_size.resize(table_number);
     table_col_pre_size.resize(table_number);
+    isHash.resize(table_number);
+    isUnique.resize(table_number);
 
     for(ll i = 0; i < table_number; i++){
         fread(&s[0], sizeof(char), settings::table_name_max_len, fp);
@@ -89,6 +93,8 @@ int Statu::read(){
         table_col_name[i].resize(table_col_num[i]);
         table_col_size[i].resize(table_col_num[i]);
         table_col_pre_size[i].resize(table_col_num[i]+1);
+        isHash[i].resize(table_col_num[i]);
+        isUnique[i].resize(table_col_num[i]);
 
         table_col_pre_size[i][0] = 0;
         for(ll j = 0; j < table_col_num[i]; j++){    
@@ -98,6 +104,9 @@ int Statu::read(){
             fread(&table_col_size[i][j], sizeof(ll), 1, fp);
             //Î¬»¤Ç°×ººÍ
             table_col_pre_size[i][j+1] = table_col_pre_size[i][j] + table_col_size[i][j];
+
+            fread(&isHash[i][j], sizeof(char), 1, fp);
+            fread(&isUnique[i][j], sizeof(char), 1, fp);
         }
     }
     fclose(fp);

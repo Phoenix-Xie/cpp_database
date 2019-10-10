@@ -1,16 +1,23 @@
 #include "database.h"
 #include "statu.h"
+#include "index.h"
+#include <cstdio>
 #include <string>
 using namespace std;
 
 DataBase::DataBase(){
-	statu = Statu::getInstance();
+	sta = Statu::getInstance();
 	table_id = -1;
+	index.clear();
+	for(ll i = 0; i < sta->table_number; i++){
+		index.push_back(new Index(i));
+		index[i]->read();
+	}
 }
 
 int DataBase::createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique){
 	
-	ll code = statu->createTable(name, col_name, col_size, isHash, isUnique);
+	ll code = sta->createTable(name, col_name, col_size, isHash, isUnique);
 	if(code == 0){
 		//创建该数据库文件
 		FILE * fp = fopen(name.data(), "w");
@@ -22,11 +29,17 @@ int DataBase::createTable(string name,const vector<string>& col_name,const vecto
 		ll nextLocation = -1;
 		fwrite(&nextLocation, sizeof(ll), 1, fp);
 		fclose(fp);
+		index.push_back(new Index(sta->table_number-1));
+		index[sta->table_number-1]->create();
 	}else{
 		return code;
 	}	 
 }
 
+int DataBase::check(){
+	if(table_id == -1)
+		return -1;
+}
 //暂时停止该功能
 /*
 void DataBase::showTables(){
@@ -67,21 +80,21 @@ void DataBase::showTables(){
 string DataBase::getTableName(){
 	if(table_id == -1)
 		return "";
-	return statu->table_name[table_id];
+	return sta->table_name[table_id];
 }
 
 ll DataBase::getColNum(){
 	if(table_id == -1) return 0;
-	return statu->table_col_num[table_id];
+	return sta->table_col_num[table_id];
 }
 
 vector<string> DataBase::getColName(){
 	if(table_id == -1) return vector<string>(0);
-	return statu->table_col_name[table_id];
+	return sta->table_col_name[table_id];
 }
 
 int DataBase::chooseTable(string name){
-	ll code = statu->getIdx(name);
+	ll code = sta->getIdx(name);
 	if(code != -1){
 		table_id = code;
 		return 0;
@@ -90,27 +103,28 @@ int DataBase::chooseTable(string name){
 	}
 }
 
+
+
 int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string name){
 	
-	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
-		return -2;
-	//todo：多存一个行数 
-	printf("start insert\n");
-
+	ll checkCode = check();
+	if(checkCode != 0){
+		return checkCode;
+	}
+	
 	//初始化参数
 	id.clear();
 
 	//用到变量定义
-	ll cnum = this->table_col_num; //项数
+	ll cnum = sta->table_col_num[table_id]; //项数
 	char valid = 'T';
-	vector <ll> & csize = this->table_col_size;
-	vector <ll> & cpsize = this->table_col_pre_size;
-	ll totalSeek = this->table_col_pre_size[this->table_col_num] * sizeof(char);  //数据总长
+	vector <ll> & csize = sta->table_col_size[table_id];
+	vector <ll> & cpsize = sta->table_col_pre_size[table_id];
+	ll totalSeek = sta->table_col_pre_size[table_id][sta->table_col_num[table_id]] * sizeof(char);  //数据总长
 	ll lineSeek = sizeof(char) + sizeof(ll) + totalSeek; //每行数据长度
-
+	vector<ll> addr; addr.clear();
 	//打开文件
-	FILE * fp = fopen(this->table_name.data(), "rb+");
+	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
 	rewind(fp);
 
 	//获取表头
@@ -129,7 +143,7 @@ int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string
 			nextLocation = -1;
 			fwrite(&nextLocation, sizeof(ll), 1, fp);
 
-			ll m = this->table_col_num;
+			ll m = sta->table_col_num[table_id];
 			
 			for(ll j = 0;  j < m; j++){
 				fwrite(s[i][j].data(), sizeof(char), csize[j], fp);
@@ -160,7 +174,7 @@ int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string
 			fseek(fp, -sizeof(ll), SEEK_CUR);
 			fwrite(&tempNum, sizeof(ll), 1, fp);	
 			//写入数据
-			ll m = this->table_col_num;
+			ll m = sta->table_col_num[table_id];
 			for(ll j = 0;  j < m; j++){
 				fwrite(s[i][j].data(), sizeof(char), csize[j], fp);
 			}  
@@ -169,30 +183,19 @@ int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string
 		//插入结束，根据fp位置计算id
 		ll fpLocation = ftell(fp);
 		id.push_back((fpLocation-sizeof(ll))/lineSeek);
+		//存储开始位置
+		addr.push_back(fpLocation-lineSeek);
 	}
 	//返回文件头
 	rewind(fp);
 	//将最后一次获得的next值写入头部
 	fwrite(&nextLocation, sizeof(ll), 1, fp);
 	fclose(fp);
-
-	// ll cnum = this->table_col_num;
-	// vector <ll> &csize = this->table_col_size;
-	// FILE * fp = fopen(this->table_name.data() , "a");
-	// // printf("name:%s\n", this->table_name.data());
-	// ll line_num = s.size();
-	// char valid = 'T';
-	// for(ll i = 0; i < line_num; i++){
-	// 	//写入数据有效位 
-	// 	fwrite(&valid, sizeof(char), 1, fp);
-	// 	for(ll j = 0; j < cnum; j++){
-	// 		printf("%d %d %s %d\n", i, j, s[i][j].data(), csize[j]);
-	// 		fwrite(s[i][j].data(), sizeof(char), csize[j], fp);
-	// 	}
-	// }
-	// fclose(fp);
+	index[table_id]->insert(s, addr);
+	return 0;
 } 
 
+/*
 void DataBase::showDatas(string name){
 	if(name != "")
 		this->chooseTable(name); 
@@ -247,23 +250,26 @@ void DataBase::showDatas(string name){
 	
 	fclose(fp);
 } 
+*/
 
 int DataBase::deleteData(string key, string value, string name){
-	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
-		return -2;
+	ll checkCode = check();
+	if(checkCode != 0){
+		return checkCode;
+	}
+
 	//查出id
 	vector<ll> id(0);
 	vector<vector<string> > ans;
 	this->query(key, value, id, ans);
 	//初始化变量
 	ll n = id.size();
-	ll len = sizeof(char) + sizeof(ll) + this->table_col_pre_size[this->table_col_num]*sizeof(char);
+	ll len = sizeof(char) + sizeof(ll) + sta->table_col_pre_size[table_id][sta->table_col_num[table_id]]*sizeof(char);
 	char valid = 'F';
 	ll nextLocation = 0;
 	ll headLocation = 0;
 	//打开文件
-	FILE * fp = fopen(this->table_name.data(), "rb+");
+	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
 	fseek(fp, 0, SEEK_SET);
 	fread(&headLocation, sizeof(ll), 1, fp);
 	for(ll i = 0; i < n; i++){
@@ -282,11 +288,14 @@ int DataBase::deleteData(string key, string value, string name){
 
 int DataBase::query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, string name){
 	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
-		return -2;
+
+	ll checkCode = check();
+	if(checkCode != 0){
+		return checkCode;
+	}
 	if(name != "")
 		this->chooseTable(name);
-	name = this->table_name; 
+	name = sta->table_name[table_id];
 
 	//获取参数长度
 	ll idx, selfLen, preSeek, lastSeek, totalSeek;
@@ -298,61 +307,95 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 	id.resize(0); //返回id参数
 	ll lineNum = 0; //记录当前行号，用作id
 	ll maxLen = 0;
-	for(ll i = 0; i < this->table_col_num; i++){
-		maxLen = max(maxLen, this->table_col_size[i]);
+	for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+		maxLen = max(maxLen, sta->table_col_size[table_id][i]);
 	}
 	vector<char> s(maxLen+10);  //临时变量 
 	string str;  //临时变量 
+	char valid;
 	
-	
-	vector <ll> & csize = this->table_col_size;
+	vector <ll> & csize = sta->table_col_size[table_id];
 	//打开文件查询
 	FILE * fp = fopen(name.data(), "rb");
-	//跳过头部
-	fseek(fp, sizeof(ll), SEEK_SET);
-	char valid;
-	while((valid=fgetc(fp))!=EOF){
-		lineNum++;
-		//该行数据有效 
-		if(valid == 'T'){
-			//跳过链表位
-			fseek(fp, sizeof(ll), SEEK_CUR);
-			//跳过前面数据块
-			fseek(fp, preSeek, SEEK_CUR);
-			//读取数据并放入string
-			fread(&s[0], sizeof(char), selfLen, fp);
-			str = &s[0];
-			// 数据正确
-			if(str == value){
-				// printf("%s数据相同", str.data());
-				//找到向前跳跃 
-				fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
-				//读取整行数据
-				vector<string> line(this->table_col_num); //一行结果 
-				for(ll i = 0; i < this->table_col_num; i++){
-					fread(&s[0], sizeof(char), csize[i], fp);
-					line[i] = &s[0];
+	
+	//具有索引的查询
+	if(sta->isHash[table_id][idx] == 'T'){
+		list <ll> addr;
+		index[table_id]->query(idx, value, addr);
+		list<ll>::iterator itr;
+		for(itr = addr.begin(); itr != addr.end(); itr++){
+			fseek(fp, *itr, SEEK_SET);
+			valid = fgetc(fp);
+			if(valid == 'T'){
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				//跳过前面数据块
+				fseek(fp, preSeek, SEEK_CUR);
+				//读取数据并放入string
+				fread(&s[0], sizeof(char), selfLen, fp);
+				str = &s[0];
+				// 数据正确
+				if(str == value){
+					// printf("%s数据相同", str.data());
+					//找到向前跳跃 
+					fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
+					//读取整行数据
+					vector<string> line(sta->table_col_num[table_id]); //一行结果 
+					for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+						fread(&s[0], sizeof(char), csize[i], fp);
+						line[i] = &s[0];
+					}
+					//vector的拷贝是深拷贝 
+					ans.push_back(line); 
+					id.push_back(lineNum);
 				}
-				//vector的拷贝是深拷贝 
-				ans.push_back(line); 
-				id.push_back(lineNum);
+			}
+		}
+	}else{ //遍历查询
+		//跳过头部
+		fseek(fp, sizeof(ll), SEEK_SET);
+		while((valid=fgetc(fp))!=EOF){
+			lineNum++;
+			//该行数据有效 
+			if(valid == 'T'){
+				//跳过链表位
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				//跳过前面数据块
+				fseek(fp, preSeek, SEEK_CUR);
+				//读取数据并放入string
+				fread(&s[0], sizeof(char), selfLen, fp);
+				str = &s[0];
+				// 数据正确
+				if(str == value){
+					// printf("%s数据相同", str.data());
+					//找到向前跳跃 
+					fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
+					//读取整行数据
+					vector<string> line(sta->table_col_num[table_id]); //一行结果 
+					for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+						fread(&s[0], sizeof(char), csize[i], fp);
+						line[i] = &s[0];
+					}
+					//vector的拷贝是深拷贝 
+					ans.push_back(line); 
+					id.push_back(lineNum);
+				}
+				else{
+					//跳过后面部分
+					fseek(fp, lastSeek, SEEK_CUR);
+				}
 			}
 			else{
-				//跳过后面部分
-				fseek(fp, lastSeek, SEEK_CUR);
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				fseek(fp, totalSeek, SEEK_CUR);
 			}
 		}
-		else{
-			fseek(fp, sizeof(ll), SEEK_CUR);
-			fseek(fp, totalSeek, SEEK_CUR);
-		}
 	}
-	return true;
+	return 0;
 }
 
 int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, ll id2, string name){
 	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
+	if (name == "" && (sta->table_name[table_id] == "未选择" || sta->table_name[table_id] == ""))
 		return -2;
 	//参数处理
 	ans.clear();
@@ -366,18 +409,18 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 	char valid; //有效位
 	ll nextLocation; //空闲链表位
 	ll idx = 0; //id记录器
-	ll totalSeek = this->table_col_pre_size[this->table_col_num] * sizeof(char);  //数据总长
+	ll totalSeek = sta->table_col_pre_size[table_id][sta->table_col_num[table_id]] * sizeof(char);  //数据总长
 	ll lineSeek = sizeof(char) + sizeof(ll) + totalSeek; //每行数据长度
 	//确定最长字段长度
 	// todo: 判断是否解决id超过当前行数,以及id合法性
 	ll maxLen = 0;
-	for(ll i = 0; i < this->table_col_num; i++){
-		maxLen = max(maxLen, this->table_col_size[i]);
+	for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+		maxLen = max(maxLen, sta->table_col_size[table_id][i]);
 	}
 	vector <char> s(maxLen);
 	string str; 
 	
-	FILE * fp = fopen(this->table_name.data(), "rb+");
+	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
 	//跳过表头
 	fseek(fp, sizeof(ll), SEEK_SET);
 	//跳过前面几行
@@ -389,9 +432,9 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 			//跳过表头
 			fseek(fp, sizeof(ll), SEEK_CUR);
 			id.push_back(idx);
-			vector<string> tempStr(this->table_col_num);
-			for(ll i = 0; i < this->table_col_num; i++){
-				fread(&s[0], sizeof(char), this->table_col_size[i], fp);
+			vector<string> tempStr(sta->table_col_num[table_id]);
+			for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+				fread(&s[0], sizeof(char), sta->table_col_size[table_id][i], fp);
 				tempStr[i] = &s[0];
 			}  
 			ans.push_back(tempStr);
@@ -403,10 +446,10 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 	}
 	fclose(fp);
 }
-
+/*
 int DataBase::predictId(ll num, vector<ll> &id, string name){
 	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
+	if (name == "" && (sta->table_name == "未选择" || this->table_name == ""))
 		return -2;
 	if(name != "")
 		this->chooseTable(name);
@@ -449,23 +492,27 @@ int DataBase::predictId(ll num, vector<ll> &id, string name){
 	}
 	return  true;
 }
+*/
 
 int DataBase::update(string key, string value, string key2, string value2, string name){
 	//判断是否选表
-	if (name == "" && (this->table_name == "未选择" || this->table_name == ""))
-		return -2;
+	ll checkCode = check();
+	if(checkCode != 0){
+		return checkCode;
+	}
+
 	vector<ll> id(0);
 	vector< vector<string> > ans;
 	this->query(key, value, id, ans);
 	ll n = id.size();
-	ll len = sizeof(char) + sizeof(ll) + this->table_col_pre_size[this->table_col_num]*sizeof(char);
+	ll len = sizeof(char) + sizeof(ll) + sta->table_col_pre_size[table_id][sta->table_col_num[table_id]]*sizeof(char);
 	ll idx, selfLen, preSeek, lastSeek, totalSeek;
 	if(!this->getKeyLocation(key2, idx, selfLen, preSeek, lastSeek, totalSeek)){
 		//查无此字段
 		return -1;
 	}
 	//进行文件操作
-	FILE * fp = fopen(this->table_name.data(), "rb+");
+	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
 	for(int i = 0; i < n; i++){
 		//跳过表头
 		fseek(fp, sizeof(ll), SEEK_SET);
@@ -487,32 +534,35 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 
 bool DataBase::getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek){
 	idx = -1;
-	for(ll i = 0; i < this->table_col_num; i++){
-		if(this->table_col_name[i] == key){
+	for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+		if(sta->table_col_name[table_id][i] == key){
 			idx = i;
 		}
 	} 
 	if(idx == -1) return false; //字段不存在
 	//计算前后数据长度 
-	selfLen = this->table_col_size[idx];
-	preSeek = (this->table_col_pre_size[idx] - this->table_col_pre_size[0])*sizeof(char);
-	lastSeek = (this->table_col_pre_size[this->table_col_num] - this->table_col_pre_size[idx+1])*sizeof(char);
-	totalSeek = this->table_col_pre_size[this->table_col_num] * sizeof(char);  //数据总长
+	selfLen = sta->table_col_size[table_id][idx];
+	preSeek = (sta->table_col_pre_size[table_id][idx] - sta->table_col_pre_size[table_id][0])*sizeof(char);
+	lastSeek = (sta->table_col_pre_size[table_id][sta->table_col_num[table_id]] - sta->table_col_pre_size[table_id][idx+1])*sizeof(char);
+	totalSeek = sta->table_col_pre_size[table_id][sta->table_col_num[table_id]] * sizeof(char);  //数据总长
 	return true;
 }
 
-void DataBase::emptyDataBase(){
-	FILE * fp = fopen(settings::settings_name.data(), "wb");
-	fclose(fp);
-	fp = fopen(settings::table_settings_name.data(), "wb");
-	fclose(fp);
+
+int DataBase::clear(){
+	return sta->clear();
 }
 
-void DataBase::emptyTable(){
+int DataBase::clearTable(string name){
+	ll checkCode = check();
+	if(checkCode != 0)
+		return checkCode;
+	if(name == "") name = sta->table_name[table_id];
 	ll nextLocation = -1;
-	FILE * fp = fopen(this->table_name.data(), "w");
+	FILE * fp = fopen(name.data(), "w");
 	fwrite(&nextLocation, sizeof(ll), 1, fp);
 	fclose(fp);
+	return 0;
 }
 
 

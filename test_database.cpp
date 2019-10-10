@@ -1,9 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
+#include "catch.hpp"
 #include "database.h"
-using namespace std;
-
 
 bool contain(const vector< vector<string> > & ans, const vector<string> & ans_t){
     ll n = ans.size();
@@ -20,8 +16,7 @@ bool contain(const vector< vector<string> > & ans, const vector<string> & ans_t)
     }
     return false;
 }
-
-int main(){
+TEST_CASE( "测试database", "[database]" ) {
     DataBase * da = new DataBase();
     da->clear();
     //变量准备
@@ -67,7 +62,7 @@ int main(){
         isUnique[i] = str[0];
     }
 
-    printf("%d\n", da->createTable(name, col_name, size, isHash, isUnique));
+    REQUIRE(da->createTable(name, col_name, size, isHash, isUnique) == 0);
     da->chooseTable(name);
     fscanf(fp, "%lld", &m);
     data.resize(m);
@@ -82,16 +77,14 @@ int main(){
     fclose(fp);
     vector<ll> id;
     vector< vector<string> > ans;
-    printf("%d\n", da->insert(data, id));
+    REQUIRE(da->insert(data, id) == 0);
     for(ll i = 0; i < m; i++){
         for(ll j = 0; j < n; j++){
             if(i == m-1)
                 ll a = 0;
-            da->query(col_name[j],data[i][j], id, ans);
-            printf("%lld %lld %d \n", i, j, contain(ans, data[i]));
+            REQUIRE(da->query(col_name[j],data[i][j], id, ans) == 0);
+            REQUIRE(contain(ans, data[i]) == true);
         }
     }
     da->clear();
 }
-
-

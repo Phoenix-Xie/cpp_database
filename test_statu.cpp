@@ -11,12 +11,10 @@ TEST_CASE( "测试Statu", "[statu]" ) {
 	//测试是否会因为外部vector改变而改变
 
 	Statu * statu = Statu::getInstance();
-	SECTION("清空数据"){
-		FILE* fp = fopen(settings::table_settings_name.data(), "w");
-		fclose(fp);
-	}
+	
 
 	SECTION("创建第一张表"){
+		statu->clear();
 		string name = "测试表1";
 		vector<string> col_name(3, "字段");
 		col_name[0] += "1";

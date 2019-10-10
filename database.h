@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <vector>
+#include "statu.h"
+#include "index.h"
 #define ll long long
 
 using namespace std;
@@ -14,14 +16,27 @@ class DataBase{
 private:
 	//µ±Ç°±íid
 	ll table_id;
-	Statu * statu;
+	Statu * sta;
+	vector<Index *> index;
+	
+
+	/*************************************************
+	Function: check
+	Description: Í¨ÓÃ×¼±¸×´Ì¬¼ì²éº¯Êý
+	Return: ×´Ì¬Âë int
+	0 ÕýÈ·
+	-1 Î´Ñ¡±í
+	Other: 
+	*************************************************/ 
+	int check();
+public:
 	/*************************************************
 	Function: DataBase
 	Calls: Statu::getInstance;
 	Description: ¹¹Ôìº¯Êý
 	*************************************************/ 
 	DataBase();
-public:
+	
 	/*************************************************
 	Function: get
 	Description: 
@@ -52,7 +67,7 @@ public:
 	*************************************************/
 	int createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique);
 	
-	void showTables();
+	//void showTables();
 
 	/*************************************************
 	Function: getTableName
@@ -90,7 +105,17 @@ public:
 	//É¾
 	int deleteData(string key, string value, string name = "");
 
-	// ï¿½ï¿½
+	/*************************************************
+	Function: query
+	Description: Ñ¡Ôñ±í
+	Calls: getKeyLocation
+	Input: 
+	Output: 
+	Return: int ×´Ì¬Âë 
+	0 Ñ¡ÖÐ
+	-1 ±í²»´æÔÚ
+	Other: 
+	*************************************************/
 	int query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, string name = "");
 
 
@@ -105,10 +130,10 @@ public:
 	bool getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek);
 
 	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿?
-	void emptyDataBase();
+	int clear();
 
 	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿?
-	void emptyTable();
+	int clearTable(string name="");
 
 
 };
