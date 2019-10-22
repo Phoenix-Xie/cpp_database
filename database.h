@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <vector>
-#include "statu.h"
-#include "index.h"
+#include "code/statu.h"
+#include "code/index.h"
 #define ll long long
 
 using namespace std;

@@ -34,6 +34,21 @@
         "list": "cpp",
         "string_view": "cpp",
         "system_error": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "atomic": "cpp",
+        "bitset": "cpp",
+        "chrono": "cpp",
+        "cmath": "cpp",
+        "condition_variable": "cpp",
+        "cstddef": "cpp",
+        "cstring": "cpp",
+        "ctime": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp",
+        "numeric": "cpp",
+        "ratio": "cpp",
+        "thread": "cpp",
+        "regex": "cpp"
     }
 }

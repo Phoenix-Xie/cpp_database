@@ -75,11 +75,11 @@
           "-std=c++11",
           "-g",
           "-o",
-          "menu",
-          "database.cpp",
-          "statu.cpp",
-          "index.cpp",
-          "menu.cpp"
+          "bin/menu",
+          "code/database.cpp",
+          "code/statu.cpp",
+          "code/index.cpp",
+          "code/menu.cpp"
         ],
         "group": {
           "kind": "build",

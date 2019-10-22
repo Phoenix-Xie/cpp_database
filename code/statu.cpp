@@ -1,4 +1,5 @@
 #include "statu.h"
+#include <windows.h>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ bool Statu::isNameRepeat(string name){
 }
 
 int Statu::save(){
-    FILE * fp = fopen(settings::table_settings_name.data(), "w");
+    FILE * fp = fopen( (settings::dataFolder + settings::table_settings_name).data(), "w");
     //printf("save\n");
     char valid = 'T';
     fwrite(&valid, sizeof(char), 1, fp);
@@ -48,7 +49,7 @@ int Statu::save(){
 
 int Statu::read(){
     
-    FILE * fp = fopen(settings::table_settings_name.data(), "r");
+    FILE * fp = fopen((settings::dataFolder + settings::table_settings_name).data(), "r");
     //printf("read\n");
     //文件不存在
     if(fp == NULL){
@@ -183,7 +184,9 @@ int Statu::clear(){
     table_col_pre_size.clear();
     isHash.clear();
     isUnique.clear();
-    FILE * fp = fopen(settings::table_settings_name.data(), "w");
+    FILE * fp = fopen((settings::dataFolder + settings::table_settings_name).data(), "w");
     fclose(fp);
+    //删除文件
+    DeleteFileA((settings::dataFolder + settings::table_settings_name).data());
     return 0;
 }

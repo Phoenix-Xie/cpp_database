@@ -2,16 +2,12 @@
 #define STATU_H
 #include <vector>
 #include <string>
+#include "settings.cpp"
 #define ll long long
 using namespace std;
 
 //可以将表的数据内容直接存在内存之中
-namespace settings{
-	static const string table_settings_name = "table_settings";
-	static const string settings_name = "settings";
-	static const ll table_name_max_len = 100;
-	static const ll col_name_max_len = 100;
-}
+
 
 class Statu{
 private:

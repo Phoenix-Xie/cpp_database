@@ -1,6 +1,7 @@
 #include "index.h"
 #include <cstdio>
 #include <list>
+#include <windows.h>
 
 using namespace std;
 
@@ -26,6 +27,8 @@ int Index::bucketInit(){
             for(ll hashCode = 0; hashCode < HASHMOD; hashCode++){
                 bucket[field][hashCode].empty();
             }
+        }else{
+            bucket[field].empty();
         }
     }
     return 0;
@@ -46,21 +49,19 @@ int Index::read(){
     string name2 = sta->table_name[sidx] + "_hash" + "_delete";
     char valid, valid2;
     ll data_t, addr;
-    FILE * fp = fopen(name.data(), "r");
-    FILE * fp2 = fopen(name2.data(), "r");
+    FILE * fp = fopen((settings::dataFolder + name).data(), "r");
+    FILE * fp2 = fopen( (settings::dataFolder + name2).data(), "r");
+    //判断插入文件
+    if(fp == NULL){
+        createInsertFile();
+    }
+    
+    if(fp2 == NULL){
+        createDeleteFile();
+    }
+
     rewind(fp);
     rewind(fp2);
-    //文件不存在
-    if(fp == NULL || fp2 == NULL){
-        createFile();
-        return 0;
-    }
-    //文件无效
-    valid = getc(fp);
-    valid2 = getc(fp2);
-    if(valid == EOF || valid2 == EOF){
-        createFile();
-    }
 
     //读取insert文件
     while((valid = getc(fp)) != EOF){
@@ -75,7 +76,9 @@ int Index::read(){
         fread(&addr, sizeof(ll), 1, fp);
         //存入bucket
         for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            bucket[i][data[i]].push_front(addr);
+            if(sta->isHash[sidx][i] == 'T'){
+                bucket[i][data[i]].push_front(addr);
+            }
         }
     }    
 
@@ -92,10 +95,13 @@ int Index::read(){
         fread(&addr, sizeof(ll), 1, fp2);
         //从bucket中删除
         for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            bucket[i][data[i]].remove(addr);
+            if(sta->isHash[sidx][i] == 'T'){
+                bucket[i][data[i]].remove(addr);
+            }
         }
     }   
     fclose(fp);
+    fclose(fp2);
     return 0;
 }
 /*
@@ -130,15 +136,16 @@ int Index::save(){
 }
 */
 
-int Index::createFile(){
+int Index::createInsertFile(){
     string name =  sta->table_name[sidx] + "_hash";
-    FILE* fp = fopen(name.data(), "w");
-    char valid = 'T';
-    fwrite(&valid, sizeof(char), 1, fp);
+    FILE* fp = fopen((settings::dataFolder + name).data(), "w");
     fclose(fp);
-    name =  sta->table_name[sidx] + "_hash" + "_delete";
-    fp = fopen(name.data(), "w");
-    fwrite(&valid, sizeof(char), 1, fp);
+    return 0;
+}
+
+int Index::createDeleteFile(){
+    string name =  sta->table_name[sidx] + "_hash" + "_delete";
+    FILE* fp = fopen((settings::dataFolder + name).data(), "w");
     fclose(fp);
     return 0;
 }
@@ -156,7 +163,7 @@ int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
     ll hashCode;
     char valid = 'T';
     string name =  sta->table_name[sidx] + "_hash";
-    FILE * fp = fopen(name.data(), "a");
+    FILE * fp = fopen((settings::dataFolder + name).data(), "a");
     for(ll i = 0; i < n; i++){
         fwrite(&valid, sizeof(char), 1, fp);
         for(ll j = 0; j < cnum; j++){
@@ -182,7 +189,7 @@ int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & add
     ll hashCode, t, k;
     char valid = 'T';
     string name =  sta->table_name[sidx] + "_hash"+"_delete";
-    FILE * fp = fopen(name.data(), "a");
+    FILE * fp = fopen((settings::dataFolder + name).data(), "a");
     for(ll i = 0; i < n; i++){
         fwrite(&valid, sizeof(char), 1, fp);
         for(ll field = 0; field < cnum; field++){
@@ -212,9 +219,14 @@ int Index::query(ll idx, string value, list<ll> & addr){
 int Index::clear(){
     string name =  sta->table_name[sidx] + "_hash";
     string name2 = sta->table_name[sidx] + "_hash" + "_delete";
-    FILE * fp = fopen(name.data(), "w");
+    //删除插入hash
+    FILE * fp = fopen((settings::dataFolder + name).data(), "w");
     fclose(fp);
-    fp = fopen(name2.data(), "w");
+    DeleteFileA((settings::dataFolder + name).data());
+    //删除删除hash文件
+    fp = fopen((settings::dataFolder + name2).data(), "w");
     fclose(fp);
+    DeleteFileA((settings::dataFolder + name2).data());
+
     return 0;
 }

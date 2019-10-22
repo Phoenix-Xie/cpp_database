@@ -1,8 +1,9 @@
-#include "database.h"
+#include "../database.h"
 #include "statu.h"
 #include "index.h"
 #include <cstdio>
 #include <string>
+#include <windows.h>
 using namespace std;
 
 DataBase::DataBase(){
@@ -11,7 +12,14 @@ DataBase::DataBase(){
 	index.clear();
 	for(ll i = 0; i < sta->table_number; i++){
 		index.push_back(new Index(i));
-		index[i]->read();
+	}
+	//创建文件夹
+	// std::wstring stemp = std::wstring(settings::dataFolder.begin(), settings::dataFolder.end());
+	// LPCWSTR sw = stemp.c_str();
+	if (CreateDirectory(settings::dataFolder.c_str(), NULL) ||
+    ERROR_ALREADY_EXISTS == GetLastError()){
+    	//cout << "Yes" << endl;
+		//todo: 文件夹存在与不存在错误处理 
 	}
 }
 
@@ -20,6 +28,7 @@ int DataBase::createTable(string name,const vector<string>& col_name,const vecto
 	ll code = sta->createTable(name, col_name, col_size, isHash, isUnique);
 	if(code == 0){
 		//创建该数据库文件
+		name = settings::dataFolder+name;
 		FILE * fp = fopen(name.data(), "w");
 		//数据文件创建失败
 		if(fp == NULL) 
@@ -109,7 +118,7 @@ int DataBase::insert(const vector< vector<string> > & s, vector<ll> & id, string
 	ll lineSeek = sizeof(char) + sizeof(ll) + totalSeek; //每行数据长度
 	vector<ll> addr; addr.clear();
 	//打开文件
-	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
+	FILE * fp = fopen( (settings::dataFolder + sta->table_name[table_id]).data(), "rb+");
 	rewind(fp);
 
 	//获取表头
@@ -254,7 +263,7 @@ int DataBase::deleteData(string key, string value, string name){
 	ll nextLocation = 0;
 	ll headLocation = 0;
 	//打开文件
-	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
+	FILE * fp = fopen((settings::dataFolder + sta->table_name[table_id]).data(), "rb+");
 	fseek(fp, 0, SEEK_SET);
 	fread(&headLocation, sizeof(ll), 1, fp);
 	for(ll i = 0; i < n; i++){
@@ -303,7 +312,7 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 	
 	vector <ll> & csize = sta->table_col_size[table_id];
 	//打开文件查询
-	FILE * fp = fopen(name.data(), "rb");
+	FILE * fp = fopen( (settings::dataFolder+name).data(), "rb");
 	
 	//具有索引的查询
 	if(sta->isHash[table_id][idx] == 'T'){
@@ -409,7 +418,7 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 	vector <char> s(maxLen);
 	string str; 
 	
-	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
+	FILE * fp = fopen( (settings::dataFolder + sta->table_name[table_id]).data(), "rb+");
 	//跳过表头
 	fseek(fp, sizeof(ll), SEEK_SET);
 	//跳过前面几行
@@ -454,7 +463,7 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 		return -1;
 	}
 	//进行文件操作
-	FILE * fp = fopen(sta->table_name[table_id].data(), "rb+");
+	FILE * fp = fopen( (settings::dataFolder + sta->table_name[table_id]).data(), "rb+");
 	for(int i = 0; i < n; i++){
 		//跳过表头
 		fseek(fp, sizeof(ll), SEEK_SET);
@@ -491,11 +500,14 @@ bool DataBase::getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, l
 }
 
 int DataBase::clear(){
+	//todo: 清空过程错误捕捉
 	ll num = sta->table_name.size();
 	for(ll i = 0; i < num; i++){
 		index[i]->clear();
+		DeleteFileA((settings::dataFolder+sta->table_name[i]).data());
 	}
-	return sta->clear();
+	sta->clear();
+	RemoveDirectoryA(settings::dataFolder.data());
 }
 
 int DataBase::clearTable(string name){
@@ -504,7 +516,7 @@ int DataBase::clearTable(string name){
 		return checkCode;
 	if(name == "") name = sta->table_name[table_id];
 	ll nextLocation = -1;
-	FILE * fp = fopen(name.data(), "w");
+	FILE * fp = fopen((settings::dataFolder + name).data(), "w");
 	fwrite(&nextLocation, sizeof(ll), 1, fp);
 	fclose(fp);
 

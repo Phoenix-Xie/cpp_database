@@ -53,6 +53,7 @@ class Index{
 		*************************************************/ 
 		int bucketInit();
 
+
     public:
 		
 		/*************************************************
@@ -68,8 +69,8 @@ class Index{
         Index(ll id);
 
 		/*************************************************
-		Function: createFile
-		Description: 创建一个表的索引文件以及所需的初始化准备
+		Function: createInsertFile
+		Description: 创建一个表的插入的索引文件以及所需的初始化准备
 		Calls: // 被本函数调用的函数清单
 		Input: 
 			name: string 创建索引的表的名称
@@ -79,7 +80,21 @@ class Index{
 		0:成功
 		Other: 进行该操作后会清空该表中现存所有数据索引,并且直接选中当前创建的表数据索引
 		*************************************************/ 
-        int createFile();
+        int createInsertFile();
+
+		/*************************************************
+		Function: createDeleteFile
+		Description: 创建一个表的插入的索引文件以及所需的初始化准备
+		Calls: // 被本函数调用的函数清单
+		Input: 
+			name: string 创建索引的表的名称
+			isHahs: const vector<char> & 是否进行hash的每一项的标志数组，注意此处T 为进行hash， F为不进行hash
+		Output: 无
+		Return: int 状态码
+		0:成功
+		Other: 进行该操作后会清空该表中现存所有数据索引,并且直接选中当前创建的表数据索引
+		*************************************************/ 
+		int createDeleteFile();
 
 		int read();
 
