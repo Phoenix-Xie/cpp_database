@@ -30,7 +30,7 @@ int DataBase::createTable(string name,const vector<string>& col_name,const vecto
 		fwrite(&nextLocation, sizeof(ll), 1, fp);
 		fclose(fp);
 		index.push_back(new Index(sta->table_number-1));
-		index[sta->table_number-1]->create();
+		return 0;
 	}else{
 		return code;
 	}	 
@@ -39,43 +39,28 @@ int DataBase::createTable(string name,const vector<string>& col_name,const vecto
 int DataBase::check(){
 	if(table_id == -1)
 		return -1;
+	return 0;
 }
-//暂时停止该功能
-/*
+
 void DataBase::showTables(){
 	printf("show\n");
-	FILE * fp = fopen(settings::table_settings_name.data(), "rb+");
-	fseek(fp, 0, SEEK_SET);
-	// 循环读取
-	char valid;
-	while((valid=fgetc(fp))!=EOF){
-		printf("tell:%d\n", ftell(fp));
-		//读取有效位
-		printf("%c ", valid); 
-		//读取表名 
-		vector <char> s(this->table_name_max_len);
-		fread(&s[0], sizeof(char), this->table_name_max_len, fp);
-		printf("%s ", &s[0]); 
-		//读取项数 
-		ll len;
-		fread(&len, sizeof(ll), 1, fp);
-		printf("%d ", len);
-		vector<char> col(this->col_name_max_len+10);
-		for(ll j = 0; j < len; j++){
-			fread(&col[0], sizeof(char), this->col_name_max_len, fp);
-			printf("%s ", &col[0]);
-		} 
-		ll t;
-		for(ll j = 0; j < len; j++){
-			fread(&t, sizeof(ll), 1, fp);
-			printf("%ld ", t);
-		} 
-		printf("\n"); 
-	} 
-	
-	fclose(fp);
+	printf("表名，字段，字段长度，是否建立hash索引\n");
+	for(int i = 0; i < sta->table_number; i++){
+		printf("表名：%s 字段：", sta->table_name[i].data());
+		for(int j = 0; j < sta->table_col_num[i]; j++){
+			printf("%s %lld %c ", sta->table_col_name[i][j].data(), sta->table_col_size[i][j], sta->isHash[i][j]);
+		}
+		printf("\n");
+	}
 }
-*/
+
+
+bool DataBase::isChoose(){
+	if(table_id == -1){
+		return false;
+	}
+	return true;
+}
 
 string DataBase::getTableName(){
 	if(table_id == -1)
@@ -303,6 +288,8 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 		//查无此字段
 		return false;
 	}
+	//整行数据长度
+	ll lineSeek = totalSeek + sizeof(ll) + sizeof(char);
 	//初始化参数
 	id.resize(0); //返回id参数
 	ll lineNum = 0; //记录当前行号，用作id
@@ -323,6 +310,7 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 		list <ll> addr;
 		index[table_id]->query(idx, value, addr);
 		list<ll>::iterator itr;
+		int  t = addr.size();
 		for(itr = addr.begin(); itr != addr.end(); itr++){
 			fseek(fp, *itr, SEEK_SET);
 			valid = fgetc(fp);
@@ -340,13 +328,14 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 					fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
 					//读取整行数据
 					vector<string> line(sta->table_col_num[table_id]); //一行结果 
+					
 					for(ll i = 0; i < sta->table_col_num[table_id]; i++){
 						fread(&s[0], sizeof(char), csize[i], fp);
 						line[i] = &s[0];
 					}
 					//vector的拷贝是深拷贝 
 					ans.push_back(line); 
-					id.push_back(lineNum);
+					id.push_back((*itr - sizeof(ll))/lineSeek + 1);
 				}
 			}
 		}
@@ -446,53 +435,6 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 	}
 	fclose(fp);
 }
-/*
-int DataBase::predictId(ll num, vector<ll> &id, string name){
-	//判断是否选表
-	if (name == "" && (sta->table_name == "未选择" || this->table_name == ""))
-		return -2;
-	if(name != "")
-		this->chooseTable(name);
-	name = this->table_name; 
-
-	//获取参数长度
-	ll totalSeek = this->table_col_pre_size[this->table_col_num] * sizeof(char);  //数据总长
-	ll lineSeek = sizeof(char) + sizeof(ll) + totalSeek; //每行数据长度
-	//初始化参数
-	id.clear(); //返回id参数
-	ll lineNum = 0; //记录当前行号，用作id
-	ll nextLocation; //表头
-	vector <ll> & csize = this->table_col_size;
-	//打开文件查询
-	FILE * fp = fopen(name.data(), "rb");
-	//读取头部
-	fread(&nextLocation, sizeof(ll), 1, fp);
-	ll location;
-	while(num > 0){
-		num--;
-		if(nextLocation == -1){
-			fseek(fp, 0, SEEK_END);
-			location = ftell(fp);
-			ll idx = (location - sizeof(ll)) / lineSeek+1;
-			id.push_back(idx);
-			break;
-		}else{
-			//跳过表头和标志位
-			fseek(fp, nextLocation+sizeof(ll)+sizeof(char), SEEK_SET);
-			ll idx = (nextLocation)/lineSeek + 1;
-			id.push_back(idx);
-			fread(&nextLocation, sizeof(ll), 1, fp);
-		}
-	}
-	ll n = id.size()-1;
-	while(num > 0){
-		num--;			
-		id.push_back(id[n]+1);
-		n++;
-	}
-	return  true;
-}
-*/
 
 int DataBase::update(string key, string value, string key2, string value2, string name){
 	//判断是否选表
@@ -503,7 +445,7 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 
 	vector<ll> id(0);
 	vector< vector<string> > ans;
-	this->query(key, value, id, ans);
+	this->query(key, value, id, ans, name);
 	ll n = id.size();
 	ll len = sizeof(char) + sizeof(ll) + sta->table_col_pre_size[table_id][sta->table_col_num[table_id]]*sizeof(char);
 	ll idx, selfLen, preSeek, lastSeek, totalSeek;
@@ -548,8 +490,11 @@ bool DataBase::getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, l
 	return true;
 }
 
-
 int DataBase::clear(){
+	ll num = sta->table_name.size();
+	for(ll i = 0; i < num; i++){
+		index[i]->clear();
+	}
 	return sta->clear();
 }
 
@@ -562,6 +507,9 @@ int DataBase::clearTable(string name){
 	FILE * fp = fopen(name.data(), "w");
 	fwrite(&nextLocation, sizeof(ll), 1, fp);
 	fclose(fp);
+
+	//清空索引
+	index[table_id]->clear();
 	return 0;
 }
 

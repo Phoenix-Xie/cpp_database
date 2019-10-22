@@ -8,32 +8,35 @@ int main(){
     //windows 下中文输出需要切换字符集
     //system("chcp 65001"); //切换字符??
     system("cls");
-	DataBase * d = DataBase::getInstance() ;
+	DataBase* d = new DataBase();
 	ll opt = 1;
 	string chooseTableName = "未选择";
+	
 	while(opt){
+		chooseTableName = d->getTableName();
+		if(chooseTableName == "") chooseTableName = "未选择";
 		system("cls");
 		printf("\
 已选中表：%s\n\
 ----------数据库操作----------\n\
 0.退出\n\
 1.新增表\n\
-2.删除表\n\
+*2.删除表\n\
 3.选择表\n\
 4.显示所有表\n\
 5.清空数据库\n\
 ----------单表操作----------\n\
 6.插入数据\n\
-7.显示当前表中数据\n\
+*7.显示当前表中数据\n\
 8.根据具体名字查询值（where）\n\
 9.删除\n\
 10.清空当前表\n\
 11.更新数据\n\
 12.根据id范围选择数据\n\
-13.获取预测id\n\
+*13.获取预测id\n\
 ----------其他额外操作-------\n\
-100.测试\n\
-101.验证存在\n", chooseTableName.data());
+*100.测试\n\
+*101.验证存在\n", chooseTableName.data());
 		scanf("%d", &opt);
 		//变量定义 
 		vector <string> col_name;
@@ -47,6 +50,7 @@ int main(){
 		string name, name2, str, str2;
 		char temp_c;
 		ll num, num2;
+		int code;
 		//操作界面 
 		switch(opt){
 			case 1:  //创建??
@@ -80,32 +84,37 @@ int main(){
 					scanf("%s", s);
 					isHash[i] = s[0]; 
 				}
-				printf("开始创建?......\n");
+				printf("开始创建......\n");
 				d->createTable(name, col_name, col_size, isHash);
 				printf("创建成功\n");
 				break; 
 			case 2:
-				printf("输入希望删除的表?:");
-				scanf("%s", s);
-				name = s;
-				printf("开始删除?......\n");
-				d->deleteTable(name);
-				printf("删除成功\n");
+				// printf("输入希望删除的表?:");
+				// scanf("%s", s);
+				// name = s;
+				// printf("开始删除?......\n");
+				// d->deleteTable(name);
+				// printf("删除成功\n");
 				break;
 			case 3:
-				printf("请输入选择的表??:");
+				printf("请输入选择的表:");
 				scanf("%s", s);
 				name = s;
-				chooseTableName = d->chooseTable(name);
+				code = d->chooseTable(name);
+				if(code == -1){
+					printf("不存在该表\n");
+				}else{
+					printf("选中\n");
+				}
 				break;
 			case 4:
 				d->showTables();
 				break;
 			case 5:
-				d->emptyDataBase();
+				d->clear();
 				break;
 			case 6: // ??
-				if(d->getTableName() == ""){
+				if(!d->isChoose()){
 					printf("请选中一张表\n");
 					break;
 				}
@@ -123,18 +132,22 @@ int main(){
 					}
 					insertData.push_back(line);
 				} 
-				d->insert(insertData, id);
+				code = d->insert(insertData, id);
+				if(code == -1){
+					printf("未选中表\n");
+					break;
+				}
 				printf("插入元素id如下\n");
 				for(ll i = 0; i < id.size(); i++){
 					printf("%lld\n", id[i]);
 				}
 				break; 
 			case 7:
-			 	if(d->getTableName() == ""){
-					printf("请选中一张表\n");
-					break;
-				}
-				d->showDatas();
+			 	// if(d->getTableName() == ""){
+				// 	printf("请选中一张表\n");
+				// 	break;
+				// }
+				// d->showDatas();
 				break;
 			case 8:   //??
 				if(d->getTableName() == ""){
@@ -166,7 +179,7 @@ int main(){
 				}
 				break;
 			case 9: //??
-				if(d->getTableName() == ""){
+				if(!d->isChoose()){
 					printf("请选中一张表\n");
 					break;
 				}
@@ -181,14 +194,14 @@ int main(){
 				d->deleteData(name, name2);
 				break;
 			case 10: //清空??
-				if(d->getTableName() == ""){
+				if(!d->isChoose()){
 					printf("请选中一张表\n");
 					break;
 				}
-				d->emptyTable();
+				d->clearTable();
 				break;
 			case 11: //??
-				if(d->getTableName() == ""){
+				if(!d->isChoose()){
 					printf("请选中一张表\n");
 					break;
 				}
@@ -207,7 +220,7 @@ int main(){
 				d->update(name, name2, str, str2);
 				break;
 			case 12:  //查id
-				if(d->getTableName() == ""){
+				if(!d->isChoose()){
 					printf("请选中一张表\n");
 					break;
 				}
@@ -232,35 +245,35 @@ int main(){
 				}
 				break;
 			case 13: //预测
-				if(d->getTableName() == ""){
-					printf("请选中一张表\n");
-					break;
-				}
-				printf("输入数量\n");
-				scanf("%lld", &num);
-				d->predictId(num, id);
-				num = id.size();
-				for(int i = 0; i < num; i++){
-					printf("%lld\n", id[i]);
-				}
+				// if(d->getTableName() == ""){
+				// 	printf("请选中一张表\n");
+				// 	break;
+				// }
+				// printf("输入数量\n");
+				// scanf("%lld", &num);
+				// d->predictId(num, id);
+				// num = id.size();
+				// for(int i = 0; i < num; i++){
+				// 	printf("%lld\n", id[i]);
+				// }
 				break;
 			case 100:
-				memset(s, 0, sizeof(s));
-				scanf("%s", s);
-				str = s;
-				scanf("%s", s);
-				name = s;
-				if(name == str)
-					printf("YES");
-				else
-					printf("No");
+				// memset(s, 0, sizeof(s));
+				// scanf("%s", s);
+				// str = s;
+				// scanf("%s", s);
+				// name = s;
+				// if(name == str)
+				// 	printf("YES");
+				// else
+				// 	printf("No");
 				
-				for(int i = 0; i < 10; i++){
-					printf("%x ", s[i]);
-				}
-				printf("\n");
-				s[2] = 0;
-				printf("%s\n", s);
+				// for(int i = 0; i < 10; i++){
+				// 	printf("%x ", s[i]);
+				// }
+				// printf("\n");
+				// s[2] = 0;
+				// printf("%s\n", s);
 				
 				break;
 			
@@ -269,5 +282,4 @@ int main(){
 		getchar();
 		getchar();
 	} 
-	d->closeDataBase();
 } 

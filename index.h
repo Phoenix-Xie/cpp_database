@@ -16,11 +16,9 @@ class Index{
 	   vector< vector< list<ll> > > bucket;
 
 		static const ll HASHMOD = 1000;
-	   	
 		Statu * sta;
 		ll sidx;
 
-		bool isReadOrCreate;
 		//todo: 设置一个 isread位置保证该index是否read或者create过
 
 		/*************************************************
@@ -46,6 +44,15 @@ class Index{
 		*************************************************/ 
 		int check();
 
+		/*************************************************
+		Function: bucketInit
+		Description: 按照isHash需要初始化bucket变量
+		Calls: // 被本函数调用的函数清单
+		Return: int 状态码
+		0 成功
+		*************************************************/ 
+		int bucketInit();
+
     public:
 		
 		/*************************************************
@@ -61,7 +68,7 @@ class Index{
         Index(ll id);
 
 		/*************************************************
-		Function: create
+		Function: createFile
 		Description: 创建一个表的索引文件以及所需的初始化准备
 		Calls: // 被本函数调用的函数清单
 		Input: 
@@ -69,13 +76,14 @@ class Index{
 			isHahs: const vector<char> & 是否进行hash的每一项的标志数组，注意此处T 为进行hash， F为不进行hash
 		Output: 无
 		Return: int 状态码
+		0:成功
 		Other: 进行该操作后会清空该表中现存所有数据索引,并且直接选中当前创建的表数据索引
 		*************************************************/ 
-        int create();
+        int createFile();
 
 		int read();
 
-		int save();
+		//int save();
 		/*************************************************
 		Function: choose
 		Description: 选取一个表的hash数据
@@ -103,7 +111,7 @@ class Index{
 		int deleteData(const vector< vector<string> > &s, const vector <ll> & addr);
 
 		/*************************************************
-		Function: delete
+		Function: delete8
 		Description: 指定字段的指定值可能存储位置的地址的链表桶
 		Calls: // 被本函数调用的函数清单
 		Input: 
@@ -115,6 +123,8 @@ class Index{
 		Other: 
 		*************************************************/
 		int query(ll idx, string value, list<ll> & addr);
+
+		int clear();
 
 };
 #endif

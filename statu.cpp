@@ -115,18 +115,28 @@ int Statu::read(){
 
 int Statu::createTable(string name, vector<string> col_name, vector<ll> size, vector<char> isHash, vector<char> isUnique){
 
+    
     //若名字重复
     if(isNameRepeat(name)){
         return -1;
     }
+
+
     ll num = col_name.size();
 
+    //默认参数设置
+    if(isUnique.size() == 0){
+        isUnique = vector<char>(num, 'F');
+    }
+
+    //检查长度
     if(num != size.size()){
         return -201;
     }
     if(num != isHash.size()){
         return -202;
     }
+    
     if(num != isUnique.size()){
         return -203;
     }
@@ -175,4 +185,5 @@ int Statu::clear(){
     isUnique.clear();
     FILE * fp = fopen(settings::table_settings_name.data(), "w");
     fclose(fp);
+    return 0;
 }

@@ -29,6 +29,24 @@ private:
 	Other: 
 	*************************************************/ 
 	int check();
+
+	/*************************************************
+	Function: getKeyLocation
+	Description: 获取对应字段所处表的位置（第几个字段）以及前后数据信息
+	Input: 
+		key: string 所查询的字段名
+	Output: 
+		idx: & ll 字段计数位置，从0开始计数第几个字段
+		selfLen: &ll 自身长度
+		preSeek: &ll 该字段前面部分数据长度（不包括空闲链表位和有效位）
+		lastSeek: &ll 该字段后面部分数据长度
+		totalSeek: && 该字段总数据长度（不包括空闲链表位和有效位）
+	Return: bool 是否成功 
+	Other: 
+	*************************************************/ 
+	bool getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek);
+
+	
 public:
 	/*************************************************
 	Function: DataBase
@@ -36,16 +54,6 @@ public:
 	Description: 构造函数
 	*************************************************/ 
 	DataBase();
-	
-	/*************************************************
-	Function: get
-	Description: 
-	Calls: 
-	Input: 
-	Output: 
-	Return: 
-	Other: 
-	*************************************************/ 
 	
 	/*************************************************
 	Function: createTable
@@ -65,25 +73,10 @@ public:
 			-301：数据文件打开失败
 	Other: 
 	*************************************************/
-	int createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique);
+	int createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique = vector<char>(0));
 	
 	//void showTables();
-
-	/*************************************************
-	Function: getTableName
-	Description: 获取表名
-	Calls: 
-	Input: 
-	Output: 
-	Return: string 若未选中表为 ""
-	Other: 
-	*************************************************/
-	string getTableName();
-
-    ll getColNum();
 	
-	vector<string> getColName();
-
 	/*************************************************
 	Function: chooseTable
 	Description: 选择表
@@ -97,10 +90,22 @@ public:
 	*************************************************/
 	int chooseTable(string name);
 
-    //锟斤拷
+    /*************************************************
+	Function: insert
+	Description: 插入数据
+	Input: 
+		s: 二维数组，插入的数据
+		id: 插入后的结果id
+	Optional:
+		name: 更新表名
+	Return: int 状态码 
+	0 插入成功
+	-1 表不存在
+	Other: 
+	*************************************************/
 	int insert(const vector< vector<string> > & s, vector<ll> & id, string name = "");
 	
-	void showDatas(string name = "");
+	// void showDatas(string name = "");
 	
 	//删
 	int deleteData(string key, string value, string name = "");
@@ -121,21 +126,58 @@ public:
 
 	int queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1 = 1, ll id2 = -1, string name = "");
 
-	int predictId(ll num, vector<ll> &id, string name = "");
 
-	//锟斤拷
+	/*************************************************
+	Function: update
+	Description: 更新数据
+	Calls: query
+	Input: 
+		key: 查询用字段名
+		value： 查询字段对应值
+		key2: 更改用字段名
+		value2： 更新用的字段对应的新值
+	Optional:
+		name: 执行的对应的表名，默认执行当前选中表
+	Return: int 状态码 
+	0 选中
+	-1 表不存在
+	Other: 
+	*************************************************/
 	int update(string key, string value, string key2, string value2, string name = "");
 	
-	//锟斤拷询某锟斤拷锟街讹拷锟斤拷锟斤拷锟斤拷锟捷段碉拷位锟斤拷(锟斤拷锟斤拷锟斤拷锟斤拷志位锟酵匡拷锟斤拷锟斤拷锟斤拷位) idx为锟斤拷锟斤拷锟街讹拷位锟矫ｏ拷锟斤拷0锟斤拷始锟斤拷锟斤拷
-	bool getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek);
+	
 
-	//锟斤拷锟斤拷锟斤拷菘锟?
+	/*************************************************
+	Function: clear
+	Description: 清空数据库
+	Input: 
+	Return: int 状态码 
+	0 清空成功 
+	*************************************************/
 	int clear();
 
-	//锟斤拷锟斤拷锟斤拷荼锟?
+	/*************************************************
+	Function: clear
+	Description: 清空一张表内所有数据
+	Optional: 
+		name: string 选中的表名，默认当前选中表名
+	Return: int 状态码 
+	0 清空成功
+	-1 未选中表
+	*************************************************/
 	int clearTable(string name="");
 
 
+	bool isChoose();
+	//get方法集合
+	string getTableName();
+
+    ll getColNum();
+	
+	vector<string> getColName();
+
+	//测试用方法
+	void showTables();
 };
 
 #endif

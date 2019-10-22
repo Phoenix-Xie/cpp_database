@@ -2,29 +2,92 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "build hello world",
+        "label": "database test",
         "type": "shell",
         "command": "g++",
         "args": [
           "-std=c++11",
           "-g",
           "-o",
-          "database",
+          "database_test",
           "database.cpp",
-          // //"menu.cpp",
-          // "index.cpp",
           "statu.cpp",
           "index.cpp",
-          "catch_core.o", //测试模块
-          //"test_statu.cpp",
-          //"test_index.cpp",
-         //"run_test.cpp",
-          "test_database.cpp",
+          "catch_core.o",
+          "test_database.cpp"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+          "$gcc"
+        ]
+      },
+      {
+        "label": "index test",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+          "-std=c++11",
+          "-g",
+          "-o",
+          "index_test",
+          "database.cpp",
+          "statu.cpp",
+          "index.cpp",
+          "catch_core.o",
+          "test_index.cpp"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+          "$gcc"
+        ]
+      },
+      {
+        "label": "statu test",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+          "-std=c++11",
+          "-g",
+          "-o",
+          "statu_test",
+          "database.cpp",
+          "statu.cpp",
+          "index.cpp",
+          "catch_core.o",
+          "test_statu.cpp"
         ],
         "group": {
           "kind": "build",
           "isDefault": true
         }
+      },
+      {
+        "label": "database with menu",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+          "-std=c++11",
+          "-g",
+          "-o",
+          "menu",
+          "database.cpp",
+          "statu.cpp",
+          "index.cpp",
+          "menu.cpp"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [
+          "$gcc"
+        ]
       }
     ]
   }

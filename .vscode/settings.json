@@ -33,6 +33,7 @@
         "deque": "cpp",
         "list": "cpp",
         "string_view": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "optional": "cpp"
     }
 }

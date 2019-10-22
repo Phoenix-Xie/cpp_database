@@ -1,6 +1,7 @@
 #include "catch.hpp"
 #include "statu.h"
 #include "index.h"
+#include <map>
 
 bool contain(ll a, list<ll> b){
     list<ll>::iterator itr = b.begin();
@@ -8,6 +9,21 @@ bool contain(ll a, list<ll> b){
         if(*itr == a)
             return true;
         itr++;
+    }
+    return false;
+}
+
+bool isSame(list <ll> a){
+    map<int, bool> b;
+    list<ll>::iterator itr = a.begin();
+    for(itr = a.begin(); itr != a.end(); itr++){
+        b[*itr] = false;
+    }
+    for(itr = a.begin(); itr != a.end(); itr++){
+        if(b[*itr]){
+            return true;
+        }
+        b[*itr] = true;
     }
     return false;
 }
@@ -40,19 +56,23 @@ TEST_CASE( "测试index", "[index]" ) {
         Index * index[2];
         for(int i = 0; i < 2; i++){
             index[i] = new Index(i);
-            REQUIRE(index[i]->create() == 0);
+            index[i]->clear();
         }
+        //清空index数据
         vector< vector<string> > s;
         s.clear();
         vector<string> line(3, "test");
         s.push_back(line);
         vector<ll> addr(1,1);
         REQUIRE(index[0]->insert(s, addr) == 0);
+
+        //查询
         list<ll> addr_l;
         REQUIRE(index[0]->query(0, "test", addr_l) == 0);
+        //包含所需结果
         REQUIRE(contain(1, addr_l) == true);
-        REQUIRE(index[0]->save() == 0);
-        REQUIRE(index[1]->save() == 0);
+        //地址唯一
+        REQUIRE(isSame(addr_l) == false);
     }
     SECTION("测试读取"){
         Index * index[2];
@@ -124,7 +144,6 @@ TEST_CASE( "测试index", "[index]" ) {
             addr.push_back(i);
         }
         fclose(fp);
-        REQUIRE(index->create() == 0);
         REQUIRE(index->insert(data, addr) == 0);
 
         list<ll> addr_l;
@@ -134,8 +153,8 @@ TEST_CASE( "测试index", "[index]" ) {
                 REQUIRE(contain(i, addr_l) == true);
             }
         }
-        REQUIRE(index->save() == 0);
-        REQUIRE(index->save() == 0);
+        // REQUIRE(index->save() == 0);
+        // REQUIRE(index->save() == 0);
         
     }
 
