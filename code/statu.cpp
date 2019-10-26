@@ -175,6 +175,10 @@ int Statu::getIdx(string name){
 }
 
 int Statu::clear(){
+    //清空所有数据文件
+    for(ll i = 0; i < table_number; i++){
+        DeleteFileA((settings::dataFolder + table_name[i]).data());
+    }
     //由于为状态类，因此应注意此处应该将所有自身变量清空
     table_number = 0;
     table_name.clear();

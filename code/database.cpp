@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <string>
 #include <windows.h>
+#include "cmdui.h"
 using namespace std;
 
 DataBase::DataBase(){
@@ -52,14 +53,43 @@ int DataBase::check(){
 }
 
 void DataBase::showTables(){
-	printf("show\n");
-	printf("表名，字段，字段长度，是否建立hash索引\n");
-	for(int i = 0; i < sta->table_number; i++){
-		printf("表名：%s 字段：", sta->table_name[i].data());
-		for(int j = 0; j < sta->table_col_num[i]; j++){
-			printf("%s %lld %c ", sta->table_col_name[i][j].data(), sta->table_col_size[i][j], sta->isHash[i][j]);
+	// printf("show\n");
+	// printf("表名，字段，字段长度，是否建立hash索引\n");
+	// for(int i = 0; i < sta->table_number; i++){
+	// 	printf("表名：%s 字段：", sta->table_name[i].data());
+	// 	for(int j = 0; j < sta->table_col_num[i]; j++){
+	// 		printf("%s %lld %c ", sta->table_col_name[i][j].data(), sta->table_col_size[i][j], sta->isHash[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
+	vector< vector<string> > data;
+	
+	for(ll i = 0; i < sta->table_number; i++){
+		vector<string> t[3];
+		data.clear();
+		t[0].clear();
+		t[0].push_back("表名："+sta->table_name[i]);
+		for(ll j = 0; j < sta->table_col_num[i]; j++){
+			t[0].push_back(sta->table_col_name[i][j]);
 		}
-		printf("\n");
+		data.push_back(t[0]);
+
+		t[1].clear();
+		t[1].push_back("数据大小");
+		for(ll j = 0; j < sta->table_col_num[i]; j++){
+			t[1].push_back(to_string(sta->table_col_size[i][j]));
+		}
+		data.push_back(t[1]);
+
+		t[2].clear();
+		t[2].push_back("索引");
+		for(ll j = 0; j < sta->table_col_num[i]; j++){
+			char chart[2];
+			chart[0] = sta->isHash[i][j];
+			t[2].push_back(chart);
+		}
+		data.push_back(t[2]);
+		CmdUI::drawTable(data);
 	}
 }
 
@@ -469,6 +499,8 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 		fseek(fp, sizeof(ll), SEEK_SET);
 		//跳转所在行
 		fseek(fp, (id[i]-1) * (totalSeek+sizeof(ll)+sizeof(char)), SEEK_CUR);
+		//获取当前地址
+		ll addr = ftell(fp);
 		//跳过有效位和链表位
 		fseek(fp, sizeof(char) + sizeof(ll), SEEK_CUR);
 		//跳到数据所在位置
@@ -478,6 +510,8 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 		
 		fwrite(value2.data(), sizeof(char), selfLen, fp);
 		//fflush(fp);
+		
+		index[table_id]->update(idx, value, value2, addr);
 	}
 	fclose(fp);
 	return 0;

@@ -38,70 +38,65 @@ Index::Index(ll id){
     sta = Statu::getInstance();
     bucket.clear();
     sidx = id;
+    logFileName =  settings::dataFolder + sta->table_name[sidx] + "_hash";
     read();
+}
+
+int Index::writeLog(FILE * fp, char opt, ll field, ll hashCode, ll addr){
+    fwrite(&opt, sizeof(char), 1, fp);
+    fwrite(&field, sizeof(ll), 1, fp);
+    fwrite(&hashCode, sizeof(ll), 1, fp);
+    fwrite(&addr, sizeof(ll), 1, fp);
+}
+int Index::ReadLog(FILE * fp, ll & field, ll & hashCode, ll & addr){
+    fread(&field, sizeof(ll), 1, fp);
+    fread(&hashCode, sizeof(ll), 1, fp);
+    fread(&addr, sizeof(ll), 1, fp);
 }
 
 int Index::read(){
     
     //初始化
     bucketInit();
-    string name =  sta->table_name[sidx] + "_hash";
-    string name2 = sta->table_name[sidx] + "_hash" + "_delete";
-    char valid, valid2;
-    ll data_t, addr;
-    FILE * fp = fopen((settings::dataFolder + name).data(), "r");
-    FILE * fp2 = fopen( (settings::dataFolder + name2).data(), "r");
+    ll field, addr, hashCode;
+    char opt;
+    FILE * fp = fopen(logFileName.data(), "rb");
     //判断插入文件
     if(fp == NULL){
-        createInsertFile();
-    }
-    
-    if(fp2 == NULL){
-        createDeleteFile();
+        createLogFile();
     }
 
     rewind(fp);
-    rewind(fp2);
-
-    //读取insert文件
-    while((valid = getc(fp)) != EOF){
+    
+    while((opt = fgetc(fp))!=EOF){
         //读取数据
-        vector<ll> data(sta->table_col_num[sidx]);
-        for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            if(sta->isHash[sidx][i] == 'T'){
-                fread(&data_t, sizeof(ll), 1, fp);
-                data[i] = data_t;
-            }
+        //int t = ftell(fp);
+        ReadLog(fp, field, hashCode, addr);
+        //t = ftell(fp);
+        if(opt == 'i'){
+            bucket[field][hashCode].push_front(addr);
+        }else if(opt == 'd'){
+            bucket[field][hashCode].remove(addr);
+        }else{
+            continue;
         }
-        fread(&addr, sizeof(ll), 1, fp);
-        //存入bucket
-        for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            if(sta->isHash[sidx][i] == 'T'){
-                bucket[i][data[i]].push_front(addr);
-            }
-        }
+        // vector<ll> data(sta->table_col_num[sidx]);
+        // for(ll i = 0; i < sta->table_col_num[sidx]; i++){
+        //     if(sta->isHash[sidx][i] == 'T'){
+        //         fread(&data_t, sizeof(ll), 1, fp);
+        //         data[i] = data_t;
+        //     }
+        // }
+        // fread(&addr, sizeof(ll), 1, fp);
+        // //存入bucket
+        // for(ll i = 0; i < sta->table_col_num[sidx]; i++){
+        //     if(sta->isHash[sidx][i] == 'T'){
+        //         bucket[i][data[i]].push_front(addr);
+        //     }
+        // }
     }    
 
-    //读取delete文件
-    while((valid = getc(fp2)) != EOF){
-        //读取数据
-        vector<ll> data(sta->table_col_num[sidx]);
-        for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            if(sta->isHash[sidx][i] == 'T'){
-                fread(&data_t, sizeof(ll), 1, fp2);
-                data[i] = data_t;
-            }
-        }
-        fread(&addr, sizeof(ll), 1, fp2);
-        //从bucket中删除
-        for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-            if(sta->isHash[sidx][i] == 'T'){
-                bucket[i][data[i]].remove(addr);
-            }
-        }
-    }   
     fclose(fp);
-    fclose(fp2);
     return 0;
 }
 /*
@@ -136,19 +131,13 @@ int Index::save(){
 }
 */
 
-int Index::createInsertFile(){
+int Index::createLogFile(){
     string name =  sta->table_name[sidx] + "_hash";
-    FILE* fp = fopen((settings::dataFolder + name).data(), "w");
+    FILE* fp = fopen(logFileName.data(), "w");
     fclose(fp);
     return 0;
 }
 
-int Index::createDeleteFile(){
-    string name =  sta->table_name[sidx] + "_hash" + "_delete";
-    FILE* fp = fopen((settings::dataFolder + name).data(), "w");
-    fclose(fp);
-    return 0;
-}
 
 int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
     ll checkCode = check();
@@ -161,19 +150,16 @@ int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
     ll cnum = sta->table_col_num[sidx];
     if(s[0].size() != cnum) return -1;
     ll hashCode;
-    char valid = 'T';
-    string name =  sta->table_name[sidx] + "_hash";
-    FILE * fp = fopen((settings::dataFolder + name).data(), "a");
+    
+    FILE * fp = fopen(logFileName.data(), "a");
     for(ll i = 0; i < n; i++){
-        fwrite(&valid, sizeof(char), 1, fp);
         for(ll j = 0; j < cnum; j++){
             if(sta->isHash[sidx][j] == 'T'){
                 hashCode = hash(s[i][j]);
                 bucket[j][hashCode].push_front(addr[i]);
-                fwrite(&hashCode, sizeof(ll), 1, fp);
+                writeLog(fp, 'i', j, hashCode, addr[i]);
             }
         }
-        fwrite(&addr[i], sizeof(ll), 1, fp);
     }
     fclose(fp);
     return 0;
@@ -187,20 +173,17 @@ int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & add
     if(n == 0) return 0;
     ll cnum = sta->table_col_num[sidx];
     ll hashCode, t, k;
-    char valid = 'T';
-    string name =  sta->table_name[sidx] + "_hash"+"_delete";
-    FILE * fp = fopen((settings::dataFolder + name).data(), "a");
+
+    FILE * fp = fopen(logFileName.data(), "a");
     for(ll i = 0; i < n; i++){
-        fwrite(&valid, sizeof(char), 1, fp);
         for(ll field = 0; field < cnum; field++){
             if(sta->isHash[sidx][field] == 'T'){
                 hashCode = hash(s[i][field]);
                 //此处默认每个有效地址唯一
                 bucket[field][hashCode].remove(addr[i]);
-                fwrite(&hashCode, sizeof(ll), 1, fp);
+                writeLog(fp, 'd', field, hashCode, addr[i]);      
             }
         }
-        fwrite(&addr[i], sizeof(ll), 1, fp);
     }
     fclose(fp);
     return 0;
@@ -215,6 +198,18 @@ int Index::query(ll idx, string value, list<ll> & addr){
     return 0;
 }
 
+int Index::update(ll idx, string value, string value2, ll addr){
+    FILE * fp = fopen(logFileName.data(), "a");
+
+    ll hashCode = hash(value);
+    bucket[idx][hashCode].remove(addr);
+    writeLog(fp, 'd', idx, hashCode, addr);
+    hashCode = hash(value2);
+    bucket[idx][hashCode].push_front(addr);
+    writeLog(fp, 'i', idx, hashCode, addr);
+
+    fclose(fp);
+}
 
 int Index::clear(){
     string name =  sta->table_name[sidx] + "_hash";

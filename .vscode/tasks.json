@@ -79,7 +79,8 @@
           "code/database.cpp",
           "code/statu.cpp",
           "code/index.cpp",
-          "code/menu.cpp"
+          "code/menu.cpp",
+          "code/cmdui.cpp",
         ],
         "group": {
           "kind": "build",
