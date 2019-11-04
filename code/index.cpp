@@ -47,11 +47,13 @@ int Index::writeLog(FILE * fp, char opt, ll field, ll hashCode, ll addr){
     fwrite(&field, sizeof(ll), 1, fp);
     fwrite(&hashCode, sizeof(ll), 1, fp);
     fwrite(&addr, sizeof(ll), 1, fp);
+    return 0;
 }
 int Index::ReadLog(FILE * fp, ll & field, ll & hashCode, ll & addr){
     fread(&field, sizeof(ll), 1, fp);
     fread(&hashCode, sizeof(ll), 1, fp);
     fread(&addr, sizeof(ll), 1, fp);
+    return 0;
 }
 
 int Index::read(){
@@ -64,6 +66,7 @@ int Index::read(){
     //判断插入文件
     if(fp == NULL){
         createLogFile();
+        return 0;
     }
 
     rewind(fp);
@@ -80,20 +83,6 @@ int Index::read(){
         }else{
             continue;
         }
-        // vector<ll> data(sta->table_col_num[sidx]);
-        // for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-        //     if(sta->isHash[sidx][i] == 'T'){
-        //         fread(&data_t, sizeof(ll), 1, fp);
-        //         data[i] = data_t;
-        //     }
-        // }
-        // fread(&addr, sizeof(ll), 1, fp);
-        // //存入bucket
-        // for(ll i = 0; i < sta->table_col_num[sidx]; i++){
-        //     if(sta->isHash[sidx][i] == 'T'){
-        //         bucket[i][data[i]].push_front(addr);
-        //     }
-        // }
     }    
 
     fclose(fp);
@@ -133,7 +122,7 @@ int Index::save(){
 
 int Index::createLogFile(){
     string name =  sta->table_name[sidx] + "_hash";
-    FILE* fp = fopen(logFileName.data(), "w");
+    FILE* fp = fopen(logFileName.data(), "wb");
     fclose(fp);
     return 0;
 }
@@ -151,7 +140,7 @@ int Index::insert(const vector< vector<string> > & s, const vector <ll> & addr){
     if(s[0].size() != cnum) return -1;
     ll hashCode;
     
-    FILE * fp = fopen(logFileName.data(), "a");
+    FILE * fp = fopen(logFileName.data(), "ab");
     for(ll i = 0; i < n; i++){
         for(ll j = 0; j < cnum; j++){
             if(sta->isHash[sidx][j] == 'T'){
@@ -174,7 +163,7 @@ int Index::deleteData(const vector< vector<string> > &s, const vector <ll> & add
     ll cnum = sta->table_col_num[sidx];
     ll hashCode, t, k;
 
-    FILE * fp = fopen(logFileName.data(), "a");
+    FILE * fp = fopen(logFileName.data(), "ab");
     for(ll i = 0; i < n; i++){
         for(ll field = 0; field < cnum; field++){
             if(sta->isHash[sidx][field] == 'T'){
@@ -199,7 +188,7 @@ int Index::query(ll idx, string value, list<ll> & addr){
 }
 
 int Index::update(ll idx, string value, string value2, ll addr){
-    FILE * fp = fopen(logFileName.data(), "a");
+    FILE * fp = fopen(logFileName.data(), "ab");
 
     ll hashCode = hash(value);
     bucket[idx][hashCode].remove(addr);
@@ -209,17 +198,18 @@ int Index::update(ll idx, string value, string value2, ll addr){
     writeLog(fp, 'i', idx, hashCode, addr);
 
     fclose(fp);
+    return 0;
 }
 
 int Index::clear(){
     string name =  sta->table_name[sidx] + "_hash";
     string name2 = sta->table_name[sidx] + "_hash" + "_delete";
     //删除插入hash
-    FILE * fp = fopen((settings::dataFolder + name).data(), "w");
+    FILE * fp = fopen((settings::dataFolder + name).data(), "wb");
     fclose(fp);
     DeleteFileA((settings::dataFolder + name).data());
     //删除删除hash文件
-    fp = fopen((settings::dataFolder + name2).data(), "w");
+    fp = fopen((settings::dataFolder + name2).data(), "wb");
     fclose(fp);
     DeleteFileA((settings::dataFolder + name2).data());
 

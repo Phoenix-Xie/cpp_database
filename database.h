@@ -1,3 +1,9 @@
+/*
+ * @Date: 2019-10-06 19:21:17
+ * @LastEditors: Phoenix
+ * @LastEditTime: 2019-10-29 10:54:09
+ */
+
 #ifndef DATABASE_H
 #define DATABASE_H
 #include <cstdio>
@@ -45,8 +51,20 @@ private:
 	Other: 
 	*************************************************/ 
 	bool getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek);
-
-	
+	/**
+  * @Date: 2019-10-29 10:34:44
+  * @describe: 无
+  * @input: 无
+  * @output: 无
+  * @return: 无
+  */
+	int traverseQuery(const string & key, const string & value, vector<ll> & id, vector< vector<string> > & ans, FILE * fp, bool isFoozy = false);
+	/**
+  * @description: 
+  * @param {type} 
+  * @return: 
+  */
+	int indexQuery(const string & key, const string & value, vector<ll> & id, vector< vector<string> > & ans, FILE * fp);
 public:
 	/*************************************************
 	Function: DataBase
@@ -55,6 +73,7 @@ public:
 	*************************************************/ 
 	DataBase();
 	
+	~DataBase();
 	/*************************************************
 	Function: createTable
 	Description: 创建一张表，并建立该表的数据内容
@@ -121,7 +140,7 @@ public:
 	-1 表不存在
 	Other: 
 	*************************************************/
-	int query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, string name = "");
+	int query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, bool isFuzzy = false, string name = "");
 
 
 	int queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1 = 1, ll id2 = -1, string name = "");
