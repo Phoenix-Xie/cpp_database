@@ -22,23 +22,6 @@ DataBase::DataBase(){
     	//cout << "Yes" << endl;
 		//todo: 文件夹存在与不存在错误处理 
 	}
-
-	//对数据文件的表检查是否存在，不存在则创建
-	for(ll i = 0; i < sta->table_number; i++){
-		FILE * fp = fopen( (settings::dataFolder + sta->table_name[i]).data() , "rb");
-		if(fp == NULL){
-			fp = fopen((settings::dataFolder + sta->table_name[i]).data(), "wb");
-			fclose(fp);
-		}
-	}
-}
-
-DataBase::~DataBase(){
-	ll n = index.size();
-	for(ll i = 0; i < n; i++){
-		delete index[i];
-	}
-	index.clear();
 }
 
 int DataBase::createTable(string name,const vector<string>& col_name,const vector<ll>& col_size, const vector<char> & isHash, const vector<char> & isUnique){
@@ -327,7 +310,7 @@ int DataBase::deleteData(string key, string value, string name){
 	fclose(fp);
 }
 
-int DataBase::query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, bool isFuzzy, string name){
+int DataBase::query(string key, string value, vector<ll> & id, vector< vector<string> > & ans, string name){
 	//判断是否选表
 
 	ll checkCode = check();
@@ -338,18 +321,102 @@ int DataBase::query(string key, string value, vector<ll> & id, vector< vector<st
 		this->chooseTable(name);
 	name = sta->table_name[table_id];
 
-	//打开文件
+	//获取参数长度
+	ll idx, selfLen, preSeek, lastSeek, totalSeek;
+	if(!this->getKeyLocation(key, idx, selfLen, preSeek, lastSeek, totalSeek)){
+		//查无此字段
+		return false;
+	}
+	//整行数据长度
+	ll lineSeek = totalSeek + sizeof(ll) + sizeof(char);
+	//初始化参数
+	id.resize(0); //返回id参数
+	ll lineNum = 0; //记录当前行号，用作id
+	ll maxLen = 0;
+	for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+		maxLen = max(maxLen, sta->table_col_size[table_id][i]);
+	}
+	vector<char> s(maxLen+10);  //临时变量 
+	string str;  //临时变量 
+	char valid;
+	
+	vector <ll> & csize = sta->table_col_size[table_id];
+	//打开文件查询
 	FILE * fp = fopen( (settings::dataFolder+name).data(), "rb");
 	
 	//具有索引的查询
-	ll idx = sta->fieldToidxMap["key"];
-	if(isFuzzy == true){
-		return traverseQuery(key, value, id, ans, fp, isFuzzy);
-	}
-	else if(sta->isHash[table_id][idx] == 'T'){
-		return indexQuery(key, value, id, ans, fp);
-	}else{ 
-		return traverseQuery(key, value, id, ans, fp, isFuzzy);
+	if(sta->isHash[table_id][idx] == 'T'){
+		list <ll> addr;
+		index[table_id]->query(idx, value, addr);
+		list<ll>::iterator itr;
+		int  t = addr.size();
+		for(itr = addr.begin(); itr != addr.end(); itr++){
+			fseek(fp, *itr, SEEK_SET);
+			valid = fgetc(fp);
+			if(valid == 'T'){
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				//跳过前面数据块
+				fseek(fp, preSeek, SEEK_CUR);
+				//读取数据并放入string
+				fread(&s[0], sizeof(char), selfLen, fp);
+				str = &s[0];
+				// 数据正确
+				if(str == value){
+					// printf("%s数据相同", str.data());
+					//找到向前跳跃 
+					fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
+					//读取整行数据
+					vector<string> line(sta->table_col_num[table_id]); //一行结果 
+					
+					for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+						fread(&s[0], sizeof(char), csize[i], fp);
+						line[i] = &s[0];
+					}
+					//vector的拷贝是深拷贝 
+					ans.push_back(line); 
+					id.push_back((*itr - sizeof(ll))/lineSeek + 1);
+				}
+			}
+		}
+	}else{ //遍历查询
+		//跳过头部
+		fseek(fp, sizeof(ll), SEEK_SET);
+		while((valid=fgetc(fp))!=EOF){
+			lineNum++;
+			//该行数据有效 
+			if(valid == 'T'){
+				//跳过链表位
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				//跳过前面数据块
+				fseek(fp, preSeek, SEEK_CUR);
+				//读取数据并放入string
+				fread(&s[0], sizeof(char), selfLen, fp);
+				str = &s[0];
+				// 数据正确
+				if(str == value){
+					// printf("%s数据相同", str.data());
+					//找到向前跳跃 
+					fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
+					//读取整行数据
+					vector<string> line(sta->table_col_num[table_id]); //一行结果 
+					for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+						fread(&s[0], sizeof(char), csize[i], fp);
+						line[i] = &s[0];
+					}
+					//vector的拷贝是深拷贝 
+					ans.push_back(line); 
+					id.push_back(lineNum);
+				}
+				else{
+					//跳过后面部分
+					fseek(fp, lastSeek, SEEK_CUR);
+				}
+			}
+			else{
+				fseek(fp, sizeof(ll), SEEK_CUR);
+				fseek(fp, totalSeek, SEEK_CUR);
+			}
+		}
 	}
 	return 0;
 }
@@ -381,7 +448,7 @@ int DataBase::queryById(vector<ll> &id, vector< vector<string> > & ans, ll id1, 
 	vector <char> s(maxLen);
 	string str; 
 	
-	FILE * fp = fopen( (settings::dataFolder + sta->table_name[table_id]).data(), "rb");
+	FILE * fp = fopen( (settings::dataFolder + sta->table_name[table_id]).data(), "rb+");
 	//跳过表头
 	fseek(fp, sizeof(ll), SEEK_SET);
 	//跳过前面几行
@@ -415,9 +482,9 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 		return checkCode;
 	}
 
-	vector<ll> id;
+	vector<ll> id(0);
 	vector< vector<string> > ans;
-	this->query(key, value, id, ans, false, name);
+	this->query(key, value, id, ans, name);
 	ll n = id.size();
 	ll len = sizeof(char) + sizeof(ll) + sta->table_col_pre_size[table_id][sta->table_col_num[table_id]]*sizeof(char);
 	ll idx, selfLen, preSeek, lastSeek, totalSeek;
@@ -443,20 +510,21 @@ int DataBase::update(string key, string value, string key2, string value2, strin
 		
 		fwrite(value2.data(), sizeof(char), selfLen, fp);
 		//fflush(fp);
-		//带有索引则更新索引
-		if(sta->isHash[table_id][idx] == 'T'){
-			index[table_id]->update(idx, value, value2, addr);
-		}
+		
+		index[table_id]->update(idx, value, value2, addr);
 	}
 	fclose(fp);
 	return 0;
 }
 
 bool DataBase::getKeyLocation(string key, ll &idx, ll & selfLen, ll & preSeek, ll & lastSeek, ll & totalSeek){
-	if(sta->fieldToidxMap[table_id].count(key) > 0){
-		idx = sta->fieldToidxMap[table_id][key];
-	}
-	else return false; //字段不存在
+	idx = -1;
+	for(ll i = 0; i < sta->table_col_num[table_id]; i++){
+		if(sta->table_col_name[table_id][i] == key){
+			idx = i;
+		}
+	} 
+	if(idx == -1) return false; //字段不存在
 	//计算前后数据长度 
 	selfLen = sta->table_col_size[table_id][idx];
 	preSeek = (sta->table_col_pre_size[table_id][idx] - sta->table_col_pre_size[table_id][0])*sizeof(char);
@@ -473,7 +541,7 @@ int DataBase::clear(){
 		DeleteFileA((settings::dataFolder+sta->table_name[i]).data());
 	}
 	sta->clear();
-	return 0;
+	RemoveDirectoryA(settings::dataFolder.data());
 }
 
 int DataBase::clearTable(string name){
@@ -491,117 +559,4 @@ int DataBase::clearTable(string name){
 	return 0;
 }
 
-int DataBase::traverseQuery(const string & key, const string & value, vector<ll> & id, vector< vector<string> > & ans, FILE * fp, bool isFuzzy){
-	id.clear();
-	ans.clear();
-	//获取参数长度
-	ll idx, selfLen, preSeek, lastSeek, totalSeek;
-	if(!this->getKeyLocation(key, idx, selfLen, preSeek, lastSeek, totalSeek)){
-		//查无此字段
-		return -1;
-	}
-	//整行数据长度
-	ll lineSeek = totalSeek + sizeof(ll) + sizeof(char);
-	//初始化参数
-	ll lineNum = 0; //记录当前行号，用作id
-	const ll & maxLen = sta->maxLen[table_id];
-	//临时变量 
-	vector<char> s(maxLen+10);  
-	string str; 
-	char valid;
-	
-	vector <ll> & csize = sta->table_col_size[table_id];
-	
-	rewind(fp);
-	fseek(fp, sizeof(ll), SEEK_SET);
-	while((valid=fgetc(fp))!=EOF){
-		lineNum++;
-		//该行数据有效 
-		if(valid == 'T'){
-			//跳过链表位
-			fseek(fp, sizeof(ll), SEEK_CUR);
-			//跳过前面数据块
-			fseek(fp, preSeek, SEEK_CUR);
-			//读取数据并放入string
-			fread(&s[0], sizeof(char), selfLen, fp);
-			str = &s[0];
-			// 数据正确
-			if( (!isFuzzy && str == value) || (isFuzzy &&  (str.find(value) != str.npos)) ){
-				//找到向前跳跃 
-				fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
-				//读取整行数据
-				vector<string> line(sta->table_col_num[table_id]); //一行结果 
-				for(ll i = 0; i < sta->table_col_num[table_id]; i++){
-					fread(&s[0], sizeof(char), csize[i], fp);
-					line[i] = &s[0];
-				}
-				//vector的拷贝是深拷贝 
-				ans.push_back(line); 
-				id.push_back(lineNum);
-			}
-			else{
-				//跳过后面部分
-				fseek(fp, lastSeek, SEEK_CUR);
-			}
-		}
-		else{
-			fseek(fp, sizeof(ll), SEEK_CUR);
-			fseek(fp, totalSeek, SEEK_CUR);
-		}
-	}
-	return 0;
-}
 
-int DataBase::indexQuery(const string & key, const string & value, vector<ll> & id, vector< vector<string> > & ans, FILE * fp){
-	id.clear();
-	ans.clear();
-	//获取参数长度
-	ll idx, selfLen, preSeek, lastSeek, totalSeek;
-	if(!this->getKeyLocation(key, idx, selfLen, preSeek, lastSeek, totalSeek)){
-		//查无此字段
-		return -1;
-	}
-	//整行数据长度
-	ll lineSeek = totalSeek + sizeof(ll) + sizeof(char);
-	//初始化参数
-	ll lineNum = 0; //记录当前行号，用作id
-	const ll & maxLen = sta->maxLen[table_id];
-	//临时变量 
-	vector<char> s(maxLen+10);  
-	string str; 
-	char valid;
-	
-	vector <ll> & csize = sta->table_col_size[table_id];
-	list <ll> addr;
-	index[table_id]->query(idx, value, addr);
-	list<ll>::iterator itr;
-	int  t = addr.size();
-	for(itr = addr.begin(); itr != addr.end(); itr++){
-		fseek(fp, *itr, SEEK_SET);
-		valid = fgetc(fp);
-		if(valid == 'T'){
-			fseek(fp, sizeof(ll), SEEK_CUR);
-			//跳过前面数据块
-			fseek(fp, preSeek, SEEK_CUR);
-			//读取数据并放入string
-			fread(&s[0], sizeof(char), selfLen, fp);
-			str = &s[0];
-			// 数据正确
-			if(str == value){
-				// printf("%s数据相同", str.data());
-				//找到向前跳跃 
-				fseek(fp, -(preSeek + selfLen*sizeof(char)), SEEK_CUR);
-				//读取整行数据
-				vector<string> line(sta->table_col_num[table_id]); //一行结果 
-				
-				for(ll i = 0; i < sta->table_col_num[table_id]; i++){
-					fread(&s[0], sizeof(char), csize[i], fp);
-					line[i] = &s[0];
-				}
-				//vector的拷贝是深拷贝 
-				ans.push_back(line); 
-				id.push_back((*itr - sizeof(ll))/lineSeek + 1);
-			}
-		}
-	}
-}

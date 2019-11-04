@@ -1,25 +1,12 @@
 #include "statu.h"
 #include <windows.h>
-#include <algorithm>
+
 using namespace std;
 
 Statu* Statu::instance = NULL;
 
 Statu::Statu(){
     read();
-    //预计算
-
-    maxLen.resize(table_number);
-    fieldToidxMap.resize(table_number);
-    for(ll i = 0; i < table_number; i++){
-        maxLen[i] = 0;
-        for(ll j = 0; j < table_col_num[ i ]; j++){
-            //计算最长字段
-            maxLen[i] = max(maxLen[i], table_col_size[i][j]);
-            //计算对应位置
-            fieldToidxMap[i][table_col_name[i][j]] = j;
-        }
-    }
 }
 
 Statu* Statu::getInstance(){
@@ -124,7 +111,6 @@ int Statu::read(){
         }
     }
     fclose(fp);
-
     return 0;
 }
 

@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include "settings.cpp"
-#include <map>
 #define ll long long
 using namespace std;
 
@@ -58,10 +57,6 @@ public:
 	vector< vector<ll> > table_col_pre_size; //每个表每列表长前缀和
 	vector< vector<char> > isHash;
 	vector< vector<char> > isUnique;
-	
-	//查询辅助数据
-	vector<ll> maxLen; //每个表最长数据长度
-	vector<map<string, ll> >fieldToidxMap; //字段对应位置
 
 	static Statu * getInstance();
 	
