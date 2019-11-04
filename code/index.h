@@ -87,18 +87,6 @@ class Index{
 
 		int read();
 
-		//int save();
-		/*************************************************
-		Function: choose
-		Description: 选取一个表的hash数据
-		Calls: // 被本函数调用的函数清单
-		Input: 
-			name: string 选取的表的名称
-		Output: 无
-		Return: int 状态码
-		Other: 无
-		*************************************************/ 
-        int choose(string name, ll cnum);
 
 		int insert(const vector< vector<string> > & s, const vector <ll> & addr);
 

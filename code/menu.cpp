@@ -30,7 +30,7 @@ int main(){
 5.清空数据库\n\
 ----------单表操作----------\n\
 6.插入数据\n\
-*7.显示当前表中数据\n\
+7.模糊搜索\n\
 8.根据具体名字查询值（where）\n\
 9.删除\n\
 10.清空当前表\n\
@@ -153,11 +153,23 @@ int main(){
 			}
 			cmdui.drawTable(temp);
 		}else if(opt == 7){
-			 	// if(d->getTableName() == ""){
-				// 	printf("请选中一张表\n");
-				// 	break;
-				// }
-				// d->showDatas();
+			if(!d->isChoose()){
+				printf("请选中一张表\n");
+				getchar();
+				getchar();
+				continue;
+			}
+			printf("请输入字段名?");
+			scanf("%s", s);
+			name = s;
+			printf("请输入值：");
+			scanf("%s", s);
+			name2 = s; 
+			//获取列名 
+			col_name = d->getColName();
+			optStartTime = clock();
+			d->query(name, name2, id, queryData, true);
+			cmdui.drawTable(queryData, col_name);
 		}else if(opt == 8){
 			if(!d->isChoose()){
 				printf("请选中一张表\n");
@@ -173,21 +185,8 @@ int main(){
 			name2 = s; 
 			//获取列名 
 			col_name = d->getColName();
-			// printf("id\t");
-			// for(ll i = 0; i < col_name.size(); i++){
-			// 	printf("%s\t", col_name[i].data());
-			// }
-			// printf("\n"); 
-			// //获取数据 
 			optStartTime = clock();
 			d->query(name, name2, id, queryData);
-			// for(ll i = 0; i < queryData.size(); i++){
-			// 	printf("%lld\t", id[i]);
-			// 	for(ll j = 0; j < queryData[0]. size(); j++){
-			// 		printf("%s\t", queryData[i][j].data());
-			// 	}
-			// 	printf("\n");
-			// }
 			cmdui.drawTable(queryData, col_name);
 		}else if(opt == 9){
 			if(!d->isChoose()){
